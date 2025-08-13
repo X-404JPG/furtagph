@@ -932,7 +932,7 @@ el('addPetBtn').addEventListener('click', async () => {
 
     setText('addPetMsg','Pet successfully added to your account!');
     el('petCode').value = '';
-    await loadUserPets(currentUser.uid);
+    window.location.reload();
   } catch(err){
     console.error(err);
     setText('addPetError', err.message || 'Failed to add pet');
@@ -1125,7 +1125,7 @@ el('confirmDeleteBtn').addEventListener('click', async () => {
     });
 
     setText('deleteMsg','Removed');
-    await loadUserPets(currentUser.uid);
+    window.location.reload();
     setTimeout(()=> { deletingPetId = null; hide(el('deleteModal')); }, 300);
   } catch(err){
     console.error(err);
