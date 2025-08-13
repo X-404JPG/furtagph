@@ -357,6 +357,21 @@
   </div>
 </div>
 
+<div id="savingOverlay" style="
+  display:none;
+  position:fixed;
+  top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.6);
+  color:white;
+  font-size:18px;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+">
+  <div>Saving, please wait...</div>
+</div>
+
+
 <!-- bottom nav (fixed, explicit indices) -->
 <nav class="bottom-nav" role="navigation" aria-label="Sections">
   <div class="nav-item" data-index="0" title="Add" aria-label="Add pet">
@@ -464,6 +479,18 @@ function setupProfileAutosave() {
     });
   });
 }
+
+function showSavingOverlay() {
+  const overlay = el('savingOverlay');
+  overlay.style.display = 'flex';
+}
+
+function hideSavingOverlay() {
+  const overlay = el('savingOverlay');
+  overlay.style.display = 'none';
+}
+
+
 
 /* =========================
    Slider (Add <-> Pets <-> Profile)
@@ -994,7 +1021,6 @@ function fileToBase64(file) {
 
 
 el('savePetBtn').addEventListener('click', async () => {
-  console.log('=== Save Pet Clicked ===');
   clearText('editPetError'); 
   clearText('editPetMsg');
 
@@ -1002,11 +1028,15 @@ el('savePetBtn').addEventListener('click', async () => {
     setText('editPetError','No pet selected'); 
     return; 
   }
+
   const cached = petsCache[editingPetId] || {};
   if ((cached.ownerID || cached.ownerId || '') !== currentUser.uid) { 
     setText('editPetError','You are not the owner of this pet.'); 
     return; 
   }
+
+  // Show saving animation
+  showSavingOverlay();
 
   const update = {
     name: el('e_name').value.trim(),
@@ -1018,27 +1048,18 @@ el('savePetBtn').addEventListener('click', async () => {
     medicalCondition: el('e_medicalCondition').value.trim(),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
-  console.log('Update before photo:', update);
 
+  // Handle photo upload if any
   const fileInput = el('e_photoFile');
-  try {
-    if (fileInput.files && fileInput.files[0]) {
-      console.log('Uploading photo...');
-      const file = fileInput.files[0];
-      const photoUrl = await uploadPetImage(file);
-      console.log('Photo URL result:', photoUrl);
-      if (photoUrl) {
-        update.photo = photoUrl;
-      } else {
-        console.warn('Photo upload failed — continuing without photo');
-      }
+  if (fileInput.files && fileInput.files[0]) {
+    try {
+      const photoUrl = await uploadPetImage(fileInput.files[0]);
+      if (photoUrl) update.photo = photoUrl;
+    } catch (err) {
+      console.error('Photo upload error:', err);
+      console.log('Photo upload failed — continuing without photo');
     }
-  } catch (err) {
-    console.error('Photo upload error:', err);
-    console.warn('Continuing save without photo');
   }
-
-  console.log('Final update object:', update);
 
   try {
     const petRef = db.collection('pets').doc(editingPetId);
@@ -1050,22 +1071,21 @@ el('savePetBtn').addEventListener('click', async () => {
       tx.update(petRef, update);
     });
 
-    // Update cache instantly
-    petsCache[editingPetId] = { ...(petsCache[editingPetId] || {}), ...update };
-    renderPetsFromCache();
-
     setText('editPetMsg', 'Saved');
 
+    // Wait then reload page
     setTimeout(() => {
-      editingPetId = null;
-      closeEditModal();
-    }, 300);
+      hideSavingOverlay();
+      window.location.reload();
+    }, 500);
 
   } catch (err) {
     console.error('Save pet error:', err);
     setText('editPetError', err.message || 'Failed to save pet');
+    hideSavingOverlay();
   }
 });
+
 
 
 
