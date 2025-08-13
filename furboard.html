@@ -943,8 +943,10 @@ el('cancelEditBtn').addEventListener('click', () => {
 
 
 el('savePetBtn').addEventListener('click', async () => {
+  console.log('=== Save Pet Clicked ===');
   clearText('editPetError'); 
   clearText('editPetMsg');
+
   if (!editingPetId) { 
     setText('editPetError','No pet selected'); 
     return; 
@@ -965,58 +967,27 @@ el('savePetBtn').addEventListener('click', async () => {
     medicalCondition: el('e_medicalCondition').value.trim(),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
+  console.log('Update before photo:', update);
 
-// NEW (Cloudinary via Netlify Function)
-async function uploadPetImage(file) {
+  const fileInput = el('e_photoFile');
   try {
-    // Compression options
-    const options = {
-      maxSizeMB: 1,               // target file size in MB
-      maxWidthOrHeight: 1280,     // max dimension
-      useWebWorker: true,         // faster processing
-      initialQuality: 0.8         // JPEG quality
-    };
-
-    // Compress image before upload
-    const compressedFile = await imageCompression(file, options);
-
-    // Convert compressed image to Base64
-    const base64 = await fileToBase64(compressedFile);
-
-    // Upload to Netlify function
-    const res = await fetch('/.netlify/functions/upload-image', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageBase64: base64 })
-    });
-
-    const data = await res.json();
-
-    if (data.url) {
-      console.log('Uploaded image URL:', data.url);
-      return data.url; // Cloudinary URL
-    } else {
-      throw new Error(data.error || 'Upload failed');
+    if (fileInput.files && fileInput.files[0]) {
+      console.log('Uploading photo...');
+      const file = fileInput.files[0];
+      const photoUrl = await uploadPetImage(file);
+      console.log('Photo URL result:', photoUrl);
+      if (photoUrl) {
+        update.photo = photoUrl;
+      } else {
+        console.warn('Photo upload failed — continuing without photo');
+      }
     }
-
-  } catch (error) {
-    console.error('Image upload error:', error);
-    alert('Image upload failed: ' + error.message);
-    return null;
+  } catch (err) {
+    console.error('Photo upload error:', err);
+    console.warn('Continuing save without photo');
   }
-}
 
-// unchanged helper function
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = err => reject(err);
-    reader.readAsDataURL(file);
-  });
-}
-
-
+  console.log('Final update object:', update);
 
   try {
     const petRef = db.collection('pets').doc(editingPetId);
@@ -1028,47 +999,23 @@ function fileToBase64(file) {
       tx.update(petRef, update);
     });
 
-    // Instant UI update from cache
-    petsCache[editingPetId] = {
-      ...(petsCache[editingPetId] || {}),
-      ...update
-    };
+    // Update cache instantly
+    petsCache[editingPetId] = { ...(petsCache[editingPetId] || {}), ...update };
     renderPetsFromCache();
 
-setText('editPetMsg', 'Saved');
+    setText('editPetMsg', 'Saved');
 
-
-
-setTimeout(() => {
-  window.location.reload(); // reload whole page to show updated pets
-}, 500);
-
-
+    setTimeout(() => {
+      editingPetId = null;
+      closeEditModal();
+    }, 300);
 
   } catch (err) {
-    console.error(err);
+    console.error('Save pet error:', err);
     setText('editPetError', err.message || 'Failed to save pet');
   }
 });
 
-
-function fileToDataUrl(file){
-  return new Promise((resolve,reject) => {
-    const r = new FileReader();
-    r.onload = e => resolve(e.target.result);
-    r.onerror = e => reject(e);
-    r.readAsDataURL(file);
-  });
-}
-
-function renderPetsFromCache() {
-  const list = el('petsList');
-  list.innerHTML = '';
-  Object.entries(petsCache).forEach(([id, data], idx) => {
-    const card = createPetCard(id, data, idx);
-    list.appendChild(card);
-  });
-}
 
 
 
