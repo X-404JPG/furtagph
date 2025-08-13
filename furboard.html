@@ -940,6 +940,57 @@ el('cancelEditBtn').addEventListener('click', () => {
 });
 
 
+async function uploadPetImage(file) {
+  try {
+    const options = {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1280,
+      useWebWorker: true,
+      initialQuality: 0.8
+    };
+
+    const compressedFile = await imageCompression(file, options);
+    const base64 = await fileToBase64(compressedFile);
+
+    const res = await fetch('/.netlify/functions/upload-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: base64 })
+    });
+
+    const data = await res.json();
+    if (data.url) {
+      console.log('Uploaded image URL:', data.url);
+      return data.url;
+    } else {
+      throw new Error(data.error || 'Upload failed');
+    }
+
+  } catch (error) {
+    console.error('Image upload error:', error);
+    alert('Image upload failed: ' + error.message);
+    return null;
+  }
+}
+
+function renderPetsFromCache() {
+  const list = el('petsList');
+  list.innerHTML = '';
+  Object.entries(petsCache).forEach(([id, data], idx) => {
+    const card = createPetCard(id, data, idx);
+    list.appendChild(card);
+  });
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = err => reject(err);
+    reader.readAsDataURL(file);
+  });
+}
+
 
 
 el('savePetBtn').addEventListener('click', async () => {
