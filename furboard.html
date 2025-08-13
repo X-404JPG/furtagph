@@ -10,6 +10,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://unpkg.com/browser-image-compression/dist/browser-image-compression.js"></script>
+
 
 
 <!-- Leaflet CSS -->
@@ -965,43 +967,55 @@ el('savePetBtn').addEventListener('click', async () => {
   };
 
 // NEW (Cloudinary via Netlify Function)
-const fileInput = el('e_photoFile');
-try {
-  if (fileInput.files && fileInput.files[0]) {
-    const file = fileInput.files[0];
+async function uploadPetImage(file) {
+  try {
+    // Compression options
+    const options = {
+      maxSizeMB: 1,               // target file size in MB
+      maxWidthOrHeight: 1280,     // max dimension
+      useWebWorker: true,         // faster processing
+      initialQuality: 0.8         // JPEG quality
+    };
 
-    // (simple guard) Netlify body size has limits; keep images modest
-    if (file.size > 4 * 1024 * 1024) {
-      throw new Error('Please choose an image under 4MB.');
-    }
+    // Compress image before upload
+    const compressedFile = await imageCompression(file, options);
 
-    // Convert file => base64 data URL
-    const base64 = await fileToDataUrl(file);
+    // Convert compressed image to Base64
+    const base64 = await fileToBase64(compressedFile);
 
-    // Send to your Netlify Function
-    const resp = await fetch('/.netlify/functions/upload-image', {
+    // Upload to Netlify function
+    const res = await fetch('/.netlify/functions/upload-image', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        imageBase64: base64,
-        userId: currentUser?.uid || null,
-        petId: editingPetId || null,
-      }),
+      body: JSON.stringify({ imageBase64: base64 })
     });
 
-    const out = await resp.json();
-    if (!resp.ok) {
-      throw new Error(out?.error || 'Upload failed');
+    const data = await res.json();
+
+    if (data.url) {
+      console.log('Uploaded image URL:', data.url);
+      return data.url; // Cloudinary URL
+    } else {
+      throw new Error(data.error || 'Upload failed');
     }
 
-    // Use the Cloudinary URL in your Firestore update
-    update.photo = out.url;
+  } catch (error) {
+    console.error('Image upload error:', error);
+    alert('Image upload failed: ' + error.message);
+    return null;
   }
-} catch (err) {
-  console.error(err);
-  setText('editPetError', err.message || 'Failed to upload photo');
-  return; // stop saving pet if upload failed
 }
+
+// unchanged helper function
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = err => reject(err);
+    reader.readAsDataURL(file);
+  });
+}
+
 
 
   try {
