@@ -1,0 +1,1130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>FurTagPH — Furboard (fixed + map)</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+
+<!-- Firebase compat (app, auth, firestore, storage) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<style>
+  :root{
+    --brand-1:#ff6f61;
+    --brand-2:#ff896f;
+    --bg:#fbfbfc;
+    --muted:#6b7280;
+    --card-radius:14px;
+    --nav-height:68px;
+    --safe-top:env(safe-area-inset-top);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);font-family:Inter,system-ui,Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased;color:#111}
+  header.topbar{ display:flex; align-items:center; justify-content:space-between; padding:12px 16px; gap:12px; background:linear-gradient(90deg,var(--brand-1),var(--brand-2)); color:#fff; position:sticky; top:0; z-index:40; }
+  header .brand { display:flex; align-items:center; gap:12px; }
+  header .brand img{height:40px;border-radius:8px}
+  header .title{ font-weight:700; font-size:18px; letter-spacing:0.2px; }
+  .container { padding: calc(12px + var(--safe-top)) 12px 94px; max-width:1000px; margin:0 auto; box-sizing: border-box;}
+
+  /* slider (3 sections) - mobile first */
+  /* slider (3 sections) - mobile first */
+.viewport {
+  height: calc(100vh - var(--nav-height) - 72px);
+  overflow: hidden;
+  position: relative;
+  border-radius: 12px;
+}
+
+.slider {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transform: translateX(-100%); /* default center = pets */
+  transition: transform 360ms cubic-bezier(.2, .9, .2, 1);
+}
+
+/* All panels default hidden */
+.panel {
+  flex: 0 0 100vw;        /* exactly one viewport width */
+  max-width: 100vw;
+  overflow-x: hidden;     /* prevent horizontal scroll */
+  overflow-y: auto;       /* allow vertical scroll */
+  padding: 14px;
+  background: transparent;
+  visibility: hidden;     /* default hidden until active */
+}
+
+/* Only active panel is visible */
+.panel.active {
+  visibility: visible;
+}
+
+
+  /* cards & forms */
+  .card { background:#fff; border-radius:var(--card-radius); box-shadow:0 10px 30px rgba(6,10,20,0.06); padding:14px; margin-bottom:12px; width: 100%; box-sizing: border-box; max-width: 100%; overflow: hidden;}
+  .card img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+  .profile { display:flex; gap:12px; align-items:center; }
+  .avatar { width:88px; height:88px; border-radius:18px; overflow:hidden; background:#f2f2f2; display:flex; align-items:center; justify-content:center; border:1px solid #eee; }
+  .avatar img{ width:100%; height:100%; object-fit:cover; }
+  .field { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  label.small{ font-size:13px; color:var(--muted); margin-bottom:6px; display:block; }
+  input[type="text"], input[type="email"], input[type="tel"], input[type="date"], textarea, input[type="file"] {
+    font-size:14px; padding:10px 12px; border-radius:8px; border:1px solid #ddd; background:#fff; width:100%;
+  }
+  input[readonly]{ background:#fafafa; }
+
+  .controls { display:flex; gap:8px; margin-top:8px; }
+  .btn { background: linear-gradient(90deg,var(--brand-1),var(--brand-2)); color:white; border:0; padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer; }
+  .btn.ghost { background:transparent; color:#333; border:1px solid #eee; box-shadow:none; }
+  .muted { color:var(--muted); font-size:13px; margin-top:8px; }
+  .error { color:#b00020; font-size:13px; margin-top:8px; }
+
+  /* pets grid */
+  .pets-meta { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+  .pets-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); gap:12px; align-items:start; }
+  .pet-card { background:#fff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:10px; align-items:center; box-shadow:0 8px 22px rgba(6,10,20,0.05); min-height:170px; position:relative; transform:translateY(6px); opacity:0; }
+  .pet-card.animate-in { animation:cardIn .36s ease forwards; }
+  @keyframes cardIn { to { transform:none; opacity:1; } }
+
+  .pet-photo { width:96px; height:96px; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#f2f2f2; border:3px solid #fff; box-shadow:0 10px 24px rgba(0,0,0,0.06); }
+  .pet-photo img{ width:100%; height:100%; object-fit:cover; }
+  .pet-name { font-weight:800; font-size:15px; text-align:center; }
+  .pet-actions { display:flex; gap:8px; width:100%; margin-top:auto; }
+  .pet-actions button { flex:1; padding:10px; border-radius:10px; font-size:13px; cursor:pointer; border:0; }
+  .pet-actions .edit{ background:#fff; border:1px solid #eee; color:#333; }
+  .pet-actions .delete{ background:#fff; border:1px solid #f5c2c2; color:#b00020; }
+
+  /* status badge */
+  .status-badge { position:absolute; top:12px; left:12px; font-size:11px; font-weight:700; padding:6px 8px; border-radius:999px; color:#fff; box-shadow:0 6px 14px rgba(0,0,0,0.08); text-transform:capitalize; }
+  .status-badge.active { background:#2196f3; }
+  .status-badge.owned { background:#16a34a; }
+  .status-badge.deleted { background:#ef4444; }
+
+  /* Claim row (add pet) */
+  .claim-row { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .claim-row input { flex:1; padding:12px; border-radius:12px; border:1px solid #e6e6e6; }
+
+  .section {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.section.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.viewport section {
+  flex: 0 0 100%;
+  visibility: hidden;
+}
+.viewport section.active {
+  visibility: visible;
+}
+
+
+  /* modals */
+  .modal-backdrop { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.45); z-index:9999; padding:16px; }
+  .modal { background:#fff; width:100%; max-width:520px; border-radius:14px; padding:16px; box-shadow:0 12px 40px rgba(10,10,10,0.18); }
+  .modal h3{ margin:0 0 8px 0; font-size:18px; }
+
+  /* bottom nav */
+  .bottom-nav { position:fixed; left:0; right:0; bottom:0; height:var(--nav-height); background:#fff; display:flex; gap:0; border-top:1px solid #eee; z-index:50; }
+  .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-size:13px; color:#444; position:relative; overflow:visible; }
+  .nav-item .icon { font-size:20px; }
+  .nav-item.active { color:var(--brand-1); }
+  .nav-item .ripple { position:absolute; border-radius:50%; transform:scale(0); animation:ripple .56s linear; background: rgba(255,111,97,0.18); pointer-events:none; }
+  @keyframes ripple { to { transform:scale(6); opacity:0; } }
+
+  /* small helpers */
+  .hidden { display:none !important; }
+  #profileMap { height:220px; border-radius:12px; overflow:hidden; }
+  @media (min-width:820px){
+    .container { padding:20px 24px 110px; }
+    .slider { border-radius:16px; }
+    .panel { padding:20px; }
+    .pet-card{ min-height:180px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar" role="banner">
+  <div class="brand" aria-hidden="true">
+    <img src="FurTagPH.png" alt="">
+    <div>
+      <div class="title">Furboard</div>
+      <div style="font-size:12px;opacity:.95">Manage your profile & pets</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <button id="btnLogout" class="btn ghost" aria-label="Logout">Logout</button>
+  </div>
+</header>
+
+<div class="container" role="main">
+  <div class="viewport" aria-live="polite">
+    <div class="slider" id="slider">
+      <!-- LEFT: Add Pet (index 0) -->
+      <section class="panel" id="panel-add">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+            <div style="font-weight:800;font-size:16px">Add / Claim Pet</div>
+            <div class="small muted">Enter pet code</div>
+          </div>
+
+          <div class="claim-row" style="margin-top:12px">
+            <input id="petCode" type="text" placeholder="Enter pet code/password" aria-label="pet code">
+            <button id="addPetBtn" class="btn">Add</button>
+          </div>
+          <div id="addPetMsg" class="muted"></div>
+          <div id="addPetError" class="error"></div>
+
+          <div style="margin-top:12px" class="small muted">If a pet code is valid and the pet is marked <strong>Active</strong> and owner is <code>FurParent</code>, the pet will be added to your account.</div>
+        </div>
+      </section>
+
+      <!-- CENTER: Pets list (index 1) -->
+      <section class="panel" id="panel-pets" tabindex="-1">
+        <div class="card">
+          <div class="pets-meta">
+            <div style="font-weight:800;font-size:16px">Your Pets</div>
+            <div class="small muted">Tap a card to edit</div>
+          </div>
+
+          <div id="petsList" class="pets-grid" aria-live="polite">
+            <!-- pet cards inserted here -->
+          </div>
+
+          <div id="petsEmpty" class="muted" style="margin-top:10px"></div>
+        </div>
+      </section>
+
+      <!-- RIGHT: Profile (index 2) -->
+      <section class="panel" id="panel-profile">
+        <div class="card">
+          <div style="display:flex;gap:12px;align-items:center;">
+            <div class="avatar" id="profileAvatar"><span class="small muted">No photo</span></div>
+            <div style="flex:1">
+              <div id="profileNamePreview" style="font-weight:800;font-size:16px">Your name</div>
+              <div id="profileEmailPreview" class="small muted">you@example.com</div>
+            </div>
+            <div>
+              <button id="editProfileBtn" class="btn ghost" type="button">Edit</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="field">
+              <label class="small">Full name</label>
+              <input id="p_fullName" type="text" placeholder="Full name">
+            </div>
+            <div class="field">
+              <label class="small">Phone</label>
+              <input id="p_phoneNumber" type="tel" placeholder="+63 ...">
+            </div>
+            <div class="field">
+              <label class="small">Email (read-only)</label>
+              <input id="p_email" type="email" readonly>
+            </div>
+            <div class="field">
+              <label class="small">Facebook</label>
+              <input id="p_facebookLink" type="text" placeholder="https://facebook.com/you">
+            </div>
+            <div class="field">
+              <label class="small">Instagram</label>
+              <input id="p_instagramLink" type="text" placeholder="https://instagram.com/you">
+            </div>
+
+            <div class="field">
+              <label class="small">Street / Barangay</label>
+              <input id="p_street" type="text" placeholder="Street / Barangay">
+            </div>
+            <div style="display:flex;gap:8px">
+              <div style="flex:1" class="field">
+                <label class="small">City</label>
+                <input id="p_city" type="text" placeholder="City">
+              </div>
+              <div style="width:120px" class="field">
+                <label class="small">Province</label>
+                <input id="p_province" type="text" placeholder="Province">
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="small">Location</label>
+              <div id="profileMap"></div>
+              <div id="profileCoord" class="small muted" style="margin-top:8px">No location set</div>
+            </div>
+
+            <div class="controls">
+              <button id="saveProfileBtn" class="btn">Save profile</button>
+              <button id="refreshProfileBtn" class="btn ghost">Refresh</button>
+            </div>
+            <div id="profileMsg" class="muted"></div>
+            <div id="profileError" class="error"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- Edit pet modal -->
+<div id="editModal" class="modal-backdrop hidden" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="modal" role="document">
+    <h3>Edit Pet</h3>
+    <div style="margin-top:8px">
+      <div class="field">
+        <label class="small">Name</label>
+        <input id="e_name" type="text">
+      </div>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1" class="field">
+          <label class="small">Breed</label>
+          <input id="e_breed" type="text">
+        </div>
+        <div style="flex:1" class="field">
+          <label class="small">Color</label>
+          <input id="e_color" type="text">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1" class="field">
+          <label class="small">DOB</label>
+          <input id="e_dob" type="date">
+        </div>
+        <div style="flex:1" class="field">
+          <label class="small">Food</label>
+          <input id="e_food" type="text">
+        </div>
+      </div>
+      <div class="field">
+        <label class="small">Allergies</label>
+        <input id="e_allergies" type="text">
+      </div>
+      <div class="field">
+        <label class="small">Medical condition</label>
+        <input id="e_medicalCondition" type="text">
+      </div>
+      <div class="field">
+        <label class="small">Photo (file)</label>
+        <input id="e_photoFile" type="file" accept="image/*">
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button id="savePetBtn" class="btn">Save</button>
+        <button id="cancelEditBtn" class="btn ghost">Cancel</button>
+      </div>
+      <div id="editPetMsg" class="muted" style="margin-top:8px"></div>
+      <div id="editPetError" class="error"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete modal -->
+<div id="deleteModal" class="modal-backdrop hidden" aria-hidden="true">
+  <div class="modal">
+    <h3>Remove pet</h3>
+    <p class="small">This action cannot be retrieved. Confirm removal to set pet status to <code>deleted</code> and remove owner.</p>
+
+    <div style="display:flex;align-items:center;gap:8px;margin:12px 0;">
+      <input id="confirmDeleteCheck" type="checkbox">
+      <label for="confirmDeleteCheck" class="small">I understand this cannot be undone.</label>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button id="confirmDeleteBtn" class="btn" disabled>Confirm remove</button>
+      <button id="cancelDeleteBtn" class="btn ghost">Cancel</button>
+    </div>
+
+    <div id="deleteMsg" class="muted" style="margin-top:8px"></div>
+    <div id="deleteError" class="error"></div>
+  </div>
+</div>
+
+<!-- bottom nav (fixed, explicit indices) -->
+<nav class="bottom-nav" role="navigation" aria-label="Sections">
+  <div class="nav-item" data-index="0" title="Add" aria-label="Add pet">
+    <div class="icon">➕</div>
+    <div style="font-size:11px">Add</div>
+  </div>
+  <div class="nav-item" data-index="1" title="Pets" aria-label="Pets list">
+    <div class="icon">🐾</div>
+    <div style="font-size:11px">Pets</div>
+  </div>
+  <div class="nav-item" data-index="2" title="Profile" aria-label="Profile">
+    <div class="icon">👤</div>
+    <div style="font-size:11px">Profile</div>
+  </div>
+</nav>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+/* =========================
+   Firebase init (compat)
+   ========================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyCARXD0ZyOfgyrvsY9KiVXs4VwloiumiHE",
+  authDomain: "furtagph-cf3d3.firebaseapp.com",
+  projectId: "furtagph-cf3d3",
+  storageBucket: "furtagph-cf3d3.appspot.com",
+  messagingSenderId: "639123411408",
+  appId: "1:639123411408:web:737d4aa4a54b414dcda9d5",
+  measurementId: "G-GHPYPB8XW8"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+
+/* =========================
+   Helpers & state
+   ========================= */
+/* =========================
+   Helpers & state
+   ========================= */
+const el = id => document.getElementById(id);
+function show(node) { if (!node) return; node.classList.remove('hidden'); node.setAttribute('aria-hidden', 'false'); }
+function hide(node) { if (!node) return; node.classList.add('hidden'); node.setAttribute('aria-hidden', 'true'); }
+
+function closeEditModal(reload = true) {
+  currentIndex = 1;
+  updateSlider();
+
+  const petsPanel = document.getElementById('panel-pets');
+  if (petsPanel) {
+    petsPanel.classList.add('active');
+    petsPanel.style.visibility = 'visible';
+    petsPanel.setAttribute('tabindex', '-1'); 
+    petsPanel.focus();
+  }
+
+  hide(el('editModal'));
+
+  if (reload && typeof loadUserPets === 'function' && currentUser) {
+    // Short delay so Firestore data is fresh
+    setTimeout(() => {
+      loadUserPets(currentUser.uid);
+    }, 800);
+  }
+}
+
+
+
+
+
+
+
+function setText(id, txt) { const e = el(id); if (e) e.textContent = txt; }
+function clearText(id) { setText(id, ''); }
+
+let currentUser = null;
+let petsCache = {};
+let editingPetId = null;
+let deletingPetId = null;
+let initialPetsLoaded = false;
+
+/* Profile map state */
+let profileMap = null;
+let profileMarker = null;
+
+/* =========================
+   Profile field autosave
+   ========================= */
+function setupProfileAutosave() {
+  const profFields = ['p_fullName', 'p_phoneNumber', 'p_facebookLink', 'p_instagramLink', 'p_street', 'p_city', 'p_province'];
+  profFields.forEach(id => {
+    const input = el(id);
+    if (!input) return;
+
+    // restore saved value if present
+    const saved = sessionStorage.getItem('profile_' + id);
+    if (saved && !input.value) input.value = saved;
+
+    // save on input
+    input.addEventListener('input', () => {
+      sessionStorage.setItem('profile_' + id, input.value);
+    });
+  });
+}
+
+/* =========================
+   Slider (Add <-> Pets <-> Profile)
+   Index mapping: 0 Add, 1 Pets, 2 Profile
+   ========================= */
+const slider = document.getElementById('slider');
+const navItems = document.querySelectorAll('.nav-item');
+let currentIndex = 1; // default: pets center
+let lastIndex = currentIndex;
+let startX = 0, deltaX = 0, isTouching = false;
+
+// Swipe event listeners
+slider.addEventListener('touchstart', e => {
+  isTouching = true;
+  startX = e.touches[0].clientX;
+  deltaX = 0;
+}, { passive: true });
+
+slider.addEventListener('touchmove', e => {
+  if (!isTouching) return;
+  deltaX = e.touches[0].clientX - startX;
+}, { passive: true });
+
+slider.addEventListener('touchend', () => {
+  if (!isTouching) return;
+  isTouching = false;
+  if (Math.abs(deltaX) > 50) {
+    if (deltaX > 0 && currentIndex > 0) {
+      currentIndex--;
+    } else if (deltaX < 0 && currentIndex < 2) {
+      currentIndex++;
+    }
+  }
+  updateSlider();
+  deltaX = 0;
+});
+
+
+function updateSlider() {
+  slider.style.transform = `translateX(-${currentIndex * 100}%)`;
+  
+  navItems.forEach(n => {
+    const idx = parseInt(n.dataset.index, 10);
+    n.classList.toggle('active', !isNaN(idx) && idx === currentIndex);
+  });
+
+  // Toggle visible panel
+  document.querySelectorAll('.panel').forEach((p, i) => {
+    p.classList.toggle('active', i === currentIndex);
+    p.style.visibility = (i === currentIndex) ? 'visible' : 'hidden';
+  });
+
+  if (currentIndex === 2 && lastIndex !== 2 && typeof loadProfile === 'function' && currentUser) {
+    loadProfile(currentUser.uid);
+  }
+  if (currentIndex === 1 && lastIndex !== 1 && typeof loadPets === 'function') {
+    loadPets();
+  }
+
+  lastIndex = currentIndex;
+}
+
+updateSlider();
+
+// Transition end — fix map sizing
+slider.addEventListener('transitionend', (e) => {
+  if (e.propertyName.includes('transform') && currentIndex === 2 && profileMap) {
+    setTimeout(() => profileMap.invalidateSize(), 80);
+    setTimeout(() => profileMap.invalidateSize(), 300);
+  }
+});
+
+/* Swipe handling */
+const viewport = document.querySelector('.viewport');
+viewport.addEventListener('touchstart', (e) => {
+  startX = e.touches[0].clientX;
+  isTouching = true;
+  slider.style.transition = 'none';
+});
+viewport.addEventListener('touchmove', (e) => {
+  if (!isTouching) return;
+  const x = e.touches[0].clientX;
+  deltaX = x - startX;
+  const percent = (deltaX / viewport.clientWidth) * 100;
+  slider.style.transform = `translateX(${ -currentIndex * 100 + percent }%)`;
+});
+viewport.addEventListener('touchend', () => {
+  isTouching = false;
+  slider.style.transition = 'transform 360ms cubic-bezier(.2,.9,.2,1)';
+  const thresholdPx = viewport.clientWidth * 0.15;
+  if (Math.abs(deltaX) > thresholdPx) {
+    if (deltaX < 0 && currentIndex < 2) currentIndex++;
+    if (deltaX > 0 && currentIndex > 0) currentIndex--;
+  }
+  deltaX = 0;
+  updateSlider();
+});
+
+/* Bottom nav ripple + click */
+navItems.forEach(item => {
+  item.addEventListener('click', (ev) => {
+    // ripple
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const rect = item.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height) * 1.2;
+    r.style.width = r.style.height = size + 'px';
+    r.style.left = (ev.clientX - rect.left - size / 2) + 'px';
+    r.style.top = (ev.clientY - rect.top - size / 2) + 'px';
+    item.appendChild(r);
+    setTimeout(() => r.remove(), 700);
+
+    const idx = parseInt(item.dataset.index || '1', 10);
+    if (!isNaN(idx) && idx !== currentIndex) {
+      currentIndex = idx;
+      updateSlider();
+    }
+  });
+});
+
+/* =========================
+   Auth & initial load
+   ========================= */
+auth.onAuthStateChanged(user => {
+  if (!user) {
+    window.location.href = 'auth.html';
+    return;
+  }
+  currentUser = user;
+  initForUser(user);
+});
+
+async function initForUser(user) {
+  el('p_email').value = user.email || '';
+  el('profileEmailPreview').textContent = user.email || '';
+  el('btnLogout').addEventListener('click', () => auth.signOut().then(() => window.location.href = 'auth.html'));
+
+  setupProfileAutosave();
+
+  await loadProfile(user.uid);
+  await loadUserPets(user.uid);
+
+  el('saveProfileBtn').addEventListener('click', saveProfileHandler);
+  el('refreshProfileBtn').addEventListener('click', () => loadProfile(currentUser.uid));
+}
+
+
+
+async function initForUser(user){
+  // fill email preview & field
+  el('p_email').value = user.email || '';
+  el('profileEmailPreview').textContent = user.email || '';
+  el('btnLogout').addEventListener('click', ()=> auth.signOut().then(()=> window.location.href='auth.html'));
+
+  // setup autosave handlers for profile fields (so accidental swipes don't lose unsaved edits)
+  setupProfileAutosave();
+
+  // load data (this will not overwrite fields that are currently focused)
+  await loadProfile(user.uid);
+  await loadUserPets(user.uid);
+
+  el('saveProfileBtn').addEventListener('click', saveProfileHandler);
+  el('refreshProfileBtn').addEventListener('click', ()=> loadProfile(currentUser.uid));
+}
+
+/* =========================
+   Profile functions + Leaflet map
+   ========================= */
+function findLocationFromDoc(data){
+  if(!data) return null;
+  if(data.location && typeof data.location.lat === 'number' && typeof data.location.lng === 'number') return { lat: data.location.lat, lng: data.location.lng };
+  if(typeof data.lat === 'number' && typeof data.lng === 'number') return { lat: data.lat, lng: data.lng };
+  if(typeof data.profileLat === 'number' && typeof data.profileLng === 'number') return { lat: data.profileLat, lng: data.profileLng };
+  return null;
+}
+
+function initProfileMap(location){
+  const defaultCoords = location || { lat: 12.8797, lng: 121.7740 }; // PH center
+  if(!profileMap){
+    profileMap = L.map('profileMap', { zoomControl: true }).setView([defaultCoords.lat, defaultCoords.lng], 10);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(profileMap);
+    profileMarker = L.marker([defaultCoords.lat, defaultCoords.lng], { draggable: true }).addTo(profileMap);
+    profileMarker.on('dragend', () => {
+      const ll = profileMarker.getLatLng();
+      setText('profileCoord', `Lat: ${ll.lat.toFixed(6)}, Lng: ${ll.lng.toFixed(6)}`);
+      // update session save immediately so location persists while editing
+      sessionStorage.setItem('profile_coord', `${ll.lat.toFixed(6)},${ll.lng.toFixed(6)}`);
+    });
+    // ensure size once rendered
+    setTimeout(()=> profileMap.invalidateSize(), 300);
+  } else {
+    profileMarker.setLatLng([defaultCoords.lat, defaultCoords.lng]);
+    profileMap.setView([defaultCoords.lat, defaultCoords.lng], 10);
+    setTimeout(()=> profileMap.invalidateSize(), 200);
+  }
+  setText('profileCoord', `Lat: ${defaultCoords.lat.toFixed(6)}, Lng: ${defaultCoords.lng.toFixed(6)}`);
+}
+
+async function loadProfile(uid){
+  console.log('loadProfile start', uid);
+  setText('profileMsg','Loading...');
+  clearText('profileError');
+  try {
+    const doc = await db.collection('users').doc(uid).get();
+    console.log('loadProfile doc exists?', doc.exists, doc && doc.data && doc.data());
+
+    if(!doc.exists){
+      // don't erase user's unsaved values — show guidance instead
+      setText('profileMsg','No profile found. Fill fields and Save.');
+      // still initialize the map
+      initProfileMap(null);
+      return;
+    }
+
+    const data = doc.data();
+
+    // helper: only set input if user is not actively editing it
+    function setIfNotFocused(id, value){
+      const inp = el(id);
+      if(!inp) return;
+      if(document.activeElement === inp) return; // don't overwrite while user types
+      inp.value = (value === undefined || value === null) ? '' : value;
+    }
+
+    setIfNotFocused('p_fullName', data.fullName || '');
+    setIfNotFocused('p_phoneNumber', data.phoneNumber || '');
+    setIfNotFocused('p_facebookLink', data.facebookLink || '');
+    setIfNotFocused('p_instagramLink', data.instagramLink || '');
+    setIfNotFocused('p_street', (data.address && data.address.street) || '');
+    setIfNotFocused('p_city', (data.address && data.address.city) || '');
+    setIfNotFocused('p_province', (data.address && data.address.province) || '');
+
+    // avatar: only replace if server provided photo (otherwise keep existing preview)
+    if(data.photo){
+      el('profileAvatar').innerHTML = '';
+      const img = document.createElement('img');
+      img.src = data.photo;
+      img.alt = 'avatar';
+      img.onerror = () => { el('profileAvatar').innerHTML = '<span class="small muted">No photo</span>'; };
+      el('profileAvatar').appendChild(img);
+    } else {
+      if(!el('profileAvatar').querySelector('img')) {
+        el('profileAvatar').innerHTML = '<span class="small muted">No photo</span>';
+      }
+    }
+
+    el('profileNamePreview').textContent = data.fullName || (currentUser.displayName || 'Your name');
+
+    // init or update profile map using any known location fields
+    const loc = findLocationFromDoc(data);
+    initProfileMap(loc);
+    setText('profileMsg','Loaded');
+  } catch(err){
+    console.error('loadProfile error', err);
+    setText('profileError', err.message || 'Failed to load profile');
+  }
+}
+
+async function saveProfileHandler(){
+  clearText('profileError');
+  setText('profileMsg','Saving...');
+  try {
+    const profile = {
+      fullName: el('p_fullName').value.trim(),
+      phoneNumber: el('p_phoneNumber').value.trim(),
+      facebookLink: el('p_facebookLink').value.trim(),
+      instagramLink: el('p_instagramLink').value.trim(),
+      address: {
+        street: el('p_street').value.trim(),
+        city: el('p_city').value.trim(),
+        province: el('p_province').value.trim()
+      },
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if(profileMarker){
+      const ll = profileMarker.getLatLng();
+      profile.location = { lat: ll.lat, lng: ll.lng };
+    } else {
+      // if the user had saved a coord to sessionStorage (from dragging marker before map init), restore it
+      const savedCoord = sessionStorage.getItem('profile_coord');
+      if(savedCoord){
+        const [lat, lng] = savedCoord.split(',').map(Number);
+        if(!isNaN(lat) && !isNaN(lng)) profile.location = { lat, lng };
+      }
+    }
+
+    await db.collection('users').doc(currentUser.uid).set(profile, { merge: true });
+    setText('profileMsg','Profile saved');
+
+    // clear session autosaves for profile fields (successful save)
+    const profFields = ['p_fullName','p_phoneNumber','p_facebookLink','p_instagramLink','p_street','p_city','p_province'];
+    profFields.forEach(id => sessionStorage.removeItem('profile_' + id));
+    sessionStorage.removeItem('profile_coord');
+
+    // reload to ensure UI reflects server state (loadProfile will not overwrite focused inputs)
+    await loadProfile(currentUser.uid);
+  } catch(err){
+    console.error(err);
+    setText('profileError', err.message || 'Failed to save profile');
+  }
+}
+
+/* =========================
+   Pets: load & UI
+   ========================= */
+async function loadUserPets(uid) {
+  const list = el('petsList');
+
+  try {
+    const results = [];
+    const q1 = await db.collection('pets').where('ownerID','==',uid).get();
+    q1.forEach(d => results.push(d));
+    const q2 = await db.collection('pets').where('ownerId','==',uid).get();
+    q2.forEach(d => { 
+      if (!results.some(r => r.id === d.id)) results.push(d); 
+    });
+
+    const docs = results.filter(d => ((d.data().status || '').toLowerCase() !== 'deleted'));
+
+    if (docs.length === 0) {
+      // Do NOT wipe cache if not empty
+      if (Object.keys(petsCache).length === 0) {
+        list.innerHTML = '<div class="small muted">No pets yet. Add a pet using the code in Add section.</div>';
+      } else {
+        renderPetsFromCache();
+      }
+      return;
+    }
+
+    // Now safe to reset cache
+    petsCache = {};
+    list.innerHTML = '';
+    docs.forEach((doc, idx) => {
+      const data = doc.data();
+      petsCache[doc.id] = data;
+      list.appendChild(createPetCard(doc.id, data, idx));
+    });
+    initialPetsLoaded = true;
+
+  } catch (err) {
+    console.error(err);
+    list.innerHTML = `<div class="error">Failed to load pets: ${err.message || err}</div>`;
+  }
+}
+
+
+
+
+function createPetCard(id, data, idx){
+  const card = document.createElement('div');
+  card.className = 'pet-card';
+  if(!initialPetsLoaded) card.classList.add('animate-in');
+  card.style.animationDelay = (idx * 40) + 'ms';
+  card.tabIndex = 0;
+
+  const status = (data.status || 'unknown').toString().toLowerCase();
+  const badge = document.createElement('div');
+  const badgeClass = (status === 'active' ? 'active' : (status === 'owned' ? 'owned' : (status === 'deleted' ? 'deleted' : 'active')));
+  badge.className = 'status-badge ' + badgeClass;
+  badge.textContent = data.status || 'Unknown';
+  card.appendChild(badge);
+
+  const photoWrap = document.createElement('div');
+  photoWrap.className = 'pet-photo';
+  if(data.photo){
+    const img = document.createElement('img');
+    img.src = data.photo;
+    img.alt = data.name || 'pet';
+    img.onerror = () => { photoWrap.innerHTML = '<div class="small muted">No photo</div>'; };
+    photoWrap.appendChild(img);
+  } else {
+    photoWrap.innerHTML = '<div class="small muted">No photo</div>';
+  }
+
+  const name = document.createElement('div');
+  name.className = 'pet-name';
+  name.textContent = data.name || 'Unnamed';
+
+  const actions = document.createElement('div');
+  actions.className = 'pet-actions';
+
+  const edit = document.createElement('button');
+  edit.className = 'edit';
+  edit.textContent = 'Edit';
+  edit.addEventListener('click', (ev) => { ev.stopPropagation(); openEditModal(id); });
+
+  const del = document.createElement('button');
+  del.className = 'delete';
+  del.textContent = 'Remove';
+  del.addEventListener('click', (ev) => { ev.stopPropagation(); openDeleteModal(id); });
+
+  actions.appendChild(edit);
+  actions.appendChild(del);
+
+  card.appendChild(photoWrap);
+  card.appendChild(name);
+  card.appendChild(actions);
+
+  card.addEventListener('click', () => openEditModal(id));
+  return card;
+}
+
+/* =========================
+   Add pet (claim) - transaction
+   ========================= */
+el('addPetBtn').addEventListener('click', async () => {
+  clearText('addPetError'); clearText('addPetMsg');
+  const code = el('petCode').value.trim();
+  if(!code){ setText('addPetError','Enter a pet code'); return; }
+  setText('addPetMsg','Checking...');
+  try {
+    const q = await db.collection('pets').where('password','==',code).limit(1).get();
+    if(q.empty){ setText('addPetError','No pet found with that code'); return; }
+    const docRef = q.docs[0].ref;
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(docRef);
+      if(!snap.exists) throw new Error('Pet no longer exists');
+      const data = snap.data();
+
+      const rawOwner = (data.ownerID ?? data.ownerId ?? '').toString().trim();
+      const ownerLower = rawOwner.toLowerCase();
+      const statusRaw = (data.status || '').toString().trim();
+      const statusLower = statusRaw.toLowerCase();
+
+      if(ownerLower !== 'furparent'){
+        throw new Error('This pet is already owned by someone else.');
+      }
+      if(statusLower !== 'active'){
+        throw new Error('This pet is not available to be claimed. Status: ' + (data.status || 'unknown'));
+      }
+
+      tx.update(docRef, {
+        ownerID: currentUser.uid,
+        status: 'Owned',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+
+    setText('addPetMsg','Pet successfully added to your account!');
+    el('petCode').value = '';
+    await loadUserPets(currentUser.uid);
+  } catch(err){
+    console.error(err);
+    setText('addPetError', err.message || 'Failed to add pet');
+  }
+});
+
+/* =========================
+   Edit pet flow (with Storage upload)
+   ========================= */
+function openEditModal(petId){
+  editingPetId = petId;
+  clearText('editPetMsg'); clearText('editPetError');
+
+  const data = petsCache[petId] || {};
+  if((data.ownerID || data.ownerId || '') !== currentUser.uid){
+    setText('editPetError','You are not the owner of this pet and cannot edit it.');
+    return;
+  }
+
+  el('e_name').value = data.name || '';
+  el('e_breed').value = data.breed || '';
+  el('e_color').value = data.color || '';
+  el('e_dob').value = data.dob || '';
+  el('e_food').value = data.food || '';
+  el('e_allergies').value = data.allergies || '';
+  el('e_medicalCondition').value = data.medicalCondition || '';
+  el('e_photoFile').value = '';
+  show(el('editModal'));
+}
+el('cancelEditBtn').addEventListener('click', () => { 
+  window.location.reload();
+});
+
+
+
+
+el('savePetBtn').addEventListener('click', async () => {
+  clearText('editPetError'); 
+  clearText('editPetMsg');
+  if (!editingPetId) { 
+    setText('editPetError','No pet selected'); 
+    return; 
+  }
+  const cached = petsCache[editingPetId] || {};
+  if ((cached.ownerID || cached.ownerId || '') !== currentUser.uid) { 
+    setText('editPetError','You are not the owner of this pet.'); 
+    return; 
+  }
+
+  const update = {
+    name: el('e_name').value.trim(),
+    breed: el('e_breed').value.trim(),
+    color: el('e_color').value.trim(),
+    dob: el('e_dob').value || null,
+    food: el('e_food').value.trim(),
+    allergies: el('e_allergies').value.trim(),
+    medicalCondition: el('e_medicalCondition').value.trim(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+// NEW (Cloudinary via Netlify Function)
+const fileInput = el('e_photoFile');
+try {
+  if (fileInput.files && fileInput.files[0]) {
+    const file = fileInput.files[0];
+
+    // (simple guard) Netlify body size has limits; keep images modest
+    if (file.size > 4 * 1024 * 1024) {
+      throw new Error('Please choose an image under 4MB.');
+    }
+
+    // Convert file => base64 data URL
+    const base64 = await fileToDataUrl(file);
+
+    // Send to your Netlify Function
+    const resp = await fetch('/.netlify/functions/upload-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        imageBase64: base64,
+        userId: currentUser?.uid || null,
+        petId: editingPetId || null,
+      }),
+    });
+
+    const out = await resp.json();
+    if (!resp.ok) {
+      throw new Error(out?.error || 'Upload failed');
+    }
+
+    // Use the Cloudinary URL in your Firestore update
+    update.photo = out.url;
+  }
+} catch (err) {
+  console.error(err);
+  setText('editPetError', err.message || 'Failed to upload photo');
+  return; // stop saving pet if upload failed
+}
+
+
+  try {
+    const petRef = db.collection('pets').doc(editingPetId);
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(petRef);
+      if (!snap.exists) throw new Error('Pet not found');
+      const serverOwner = (snap.data().ownerID || snap.data().ownerId || '').toString();
+      if (serverOwner !== currentUser.uid) throw new Error('You are no longer the owner of this pet.');
+      tx.update(petRef, update);
+    });
+
+    // Instant UI update from cache
+    petsCache[editingPetId] = {
+      ...(petsCache[editingPetId] || {}),
+      ...update
+    };
+    renderPetsFromCache();
+
+setText('editPetMsg', 'Saved');
+
+
+
+setTimeout(() => {
+  window.location.reload(); // reload whole page to show updated pets
+}, 500);
+
+
+
+  } catch (err) {
+    console.error(err);
+    setText('editPetError', err.message || 'Failed to save pet');
+  }
+});
+
+
+function fileToDataUrl(file){
+  return new Promise((resolve,reject) => {
+    const r = new FileReader();
+    r.onload = e => resolve(e.target.result);
+    r.onerror = e => reject(e);
+    r.readAsDataURL(file);
+  });
+}
+
+function renderPetsFromCache() {
+  const list = el('petsList');
+  list.innerHTML = '';
+  Object.entries(petsCache).forEach(([id, data], idx) => {
+    const card = createPetCard(id, data, idx);
+    list.appendChild(card);
+  });
+}
+
+
+
+
+/* =========================
+   Delete flow
+   ========================= */
+function openDeleteModal(petId){
+  deletingPetId = petId;
+  el('confirmDeleteCheck').checked = false;
+  el('confirmDeleteBtn').disabled = true;
+  clearText('deleteMsg'); clearText('deleteError');
+  show(el('deleteModal'));
+}
+el('cancelDeleteBtn').addEventListener('click', ()=> { deletingPetId = null; hide(el('deleteModal')); });
+
+el('confirmDeleteCheck').addEventListener('change', (ev) => { el('confirmDeleteBtn').disabled = !ev.target.checked; });
+
+el('confirmDeleteBtn').addEventListener('click', async () => {
+  clearText('deleteError'); setText('deleteMsg','Removing...');
+  if(!deletingPetId){ setText('deleteError','No pet selected'); return; }
+
+  try {
+    const petRef = db.collection('pets').doc(deletingPetId);
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(petRef);
+      if(!snap.exists) throw new Error('Pet not found');
+      const serverOwner = (snap.data().ownerID || snap.data().ownerId || '').toString();
+      if(serverOwner !== currentUser.uid) throw new Error('You are not the owner of this pet.');
+      tx.update(petRef, {
+        status: 'deleted',
+        ownerID: firebase.firestore.FieldValue.delete(),
+        ownerId: firebase.firestore.FieldValue.delete(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+
+    setText('deleteMsg','Removed');
+    await loadUserPets(currentUser.uid);
+    setTimeout(()=> { deletingPetId = null; hide(el('deleteModal')); }, 300);
+  } catch(err){
+    console.error(err);
+    setText('deleteError', err.message || 'Failed to remove pet');
+  }
+});
+
+
+/* Close modals by clicking backdrop or ESC */
+/* Close modals by clicking backdrop or ESC */
+document.querySelectorAll('.modal-backdrop').forEach(md => {
+  md.addEventListener('click', (ev) => {
+    if (ev.target === md) {
+      if (md.id === 'editModal') {
+        window.location.reload(); // reload page for consistent state
+      } else {
+        hide(md);
+      }
+    }
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (!el('editModal').classList.contains('hidden')) {
+      window.location.reload(); // reload page for consistent state
+    }
+    hide(el('deleteModal'));
+  }
+});
+
+</script>
+</body>
+</html>
