@@ -135,49 +135,6 @@
   import { db } from './firebase.js';
   import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-(function () {
-  const NOTIFY_URL = "/.netlify/functions/pet-found-email";
-  const petId = new URLSearchParams(window.location.search).get("id");
-  if (!petId) return;
-
-  // client-side throttle (matches server throttle approx)
-  const key = `scanNotify:${petId}`;
-  const windowMinutes = 30;
-  try {
-    const last = localStorage.getItem(key);
-    const now = Date.now();
-    if (last && now - Number(last) < windowMinutes * 60 * 1000) return;
-    localStorage.setItem(key, String(now));
-  } catch (e) {
-    // ignore storage errors
-  }
-
-  function send(payload) {
-    fetch(NOTIFY_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }).catch((err) => console.warn("notify failed", err));
-  }
-
-  const ua = navigator.userAgent || "";
-
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        send({ petId, lat: pos.coords.latitude, lng: pos.coords.longitude, ua });
-      },
-      (_err) => {
-        // user denied or timeout — still notify without coords
-        send({ petId, ua });
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  } else {
-    send({ petId, ua });
-  }
-})();
-
   const DEFAULT_PET_IMG = 'logo.png';
 
   function showError() {
@@ -378,6 +335,50 @@
       showError();
     }
   })();
+
+  (function () {
+  const NOTIFY_URL = "/.netlify/functions/pet-found-email";
+  const petId = new URLSearchParams(window.location.search).get("id");
+  if (!petId) return;
+
+  // client-side throttle (matches server throttle approx)
+  const key = `scanNotify:${petId}`;
+  const windowMinutes = 30;
+  try {
+    const last = localStorage.getItem(key);
+    const now = Date.now();
+    if (last && now - Number(last) < windowMinutes * 60 * 1000) return;
+    localStorage.setItem(key, String(now));
+  } catch (e) {
+    // ignore storage errors
+  }
+
+  function send(payload) {
+    fetch(NOTIFY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).catch((err) => console.warn("notify failed", err));
+  }
+
+  const ua = navigator.userAgent || "";
+
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        send({ petId, lat: pos.coords.latitude, lng: pos.coords.longitude, ua });
+      },
+      (_err) => {
+        // user denied or timeout — still notify without coords
+        send({ petId, ua });
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  } else {
+    send({ petId, ua });
+  }
+})();
+
 </script>
 
 </body>
