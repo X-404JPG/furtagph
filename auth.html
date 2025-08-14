@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff6f61">
+
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>FurTagPH — Auth</title>
@@ -443,6 +446,13 @@ window.addEventListener('load', () => {
     try { swiper.allowTouchMove = true; } catch(e){}
   }
 });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js')
+    .then(() => console.log('Service Worker registered'))
+    .catch(err => console.log('Service Worker failed:', err));
+}
+
 
 /* NOTE: If you open the file via file:// you may see origin warnings.
    Serve via a local webserver (python -m http.server or Live Server) for Leaflet and Firebase to behave properly. */
