@@ -336,12 +336,12 @@
     }
   })();
 
-  (function () {
+(async function () {
   const NOTIFY_URL = "/.netlify/functions/pet-found-email-gmail";
   const petId = new URLSearchParams(window.location.search).get("id");
   if (!petId) return;
 
-  // Client-side throttle to avoid multiple notifications
+  // Client-side throttle: prevent multiple notifications within 30 minutes
   const key = `scanNotify:${petId}`;
   const windowMinutes = 30;
   try {
@@ -350,34 +350,49 @@
     if (last && now - Number(last) < windowMinutes * 60 * 1000) return;
     localStorage.setItem(key, String(now));
   } catch (e) {
-    // ignore storage errors
-  }
-
-  function send(payload) {
-    fetch(NOTIFY_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }).catch((err) => console.warn("notify failed", err));
+    console.warn("LocalStorage error:", e);
   }
 
   const ua = navigator.userAgent || "";
 
+  async function sendEmail(extra = {}) {
+    // Build payload for Netlify Gmail function
+    const payload = {
+      to: extra.to || "owner@example.com", // replace dynamically if possible
+      subject: "Your Pet Has Been Found!",
+      message: `
+        <p>Hi,</p>
+        <p>Your pet with ID <strong>${petId}</strong> was scanned.</p>
+        ${extra.lat && extra.lng ? `<p>Location: ${extra.lat}, ${extra.lng}</p>` : ""}
+        <p>Device info: ${ua}</p>
+        <p>Check your pet's profile <a href="${window.location.href}">here</a>.</p>
+      `
+    };
+
+    try {
+      const res = await fetch(NOTIFY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) console.warn("Notify failed:", await res.text());
+    } catch (err) {
+      console.warn("Notify error:", err);
+    }
+  }
+
+  // Send email with geolocation if available
   if ("geolocation" in navigator) {
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        send({ petId, lat: pos.coords.latitude, lng: pos.coords.longitude, ua });
-      },
-      (_err) => {
-        // user denied or timeout — still notify without coords
-        send({ petId, ua });
-      },
+      (pos) => sendEmail({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => sendEmail(),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   } else {
-    send({ petId, ua });
+    sendEmail();
   }
 })();
+
 
 </script>
 
