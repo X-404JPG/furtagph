@@ -1,417 +1,429 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Pet Profile</title>
-  <link rel="icon" href="logo.ico" type="image/x-icon" />
-  <!-- Font Awesome CDN (icons) -->
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-
-  <!-- tailwind (dev CDN — ok for now) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
-    /* Animations */
     @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     .fade-up { animation: fadeUp 0.45s ease-out both; }
-
-    /* shimmer skeleton */
-    .skeleton {
-      background: linear-gradient(90deg,#e7e7e7 25%, #f5f5f5 50%, #e7e7e7 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.2s linear infinite;
-      color: transparent !important;
-    }
+    .skeleton { background: linear-gradient(90deg,#e7e7e7 25%, #f5f5f5 50%, #e7e7e7 75%);
+                background-size: 200% 100%; animation: shimmer 1.2s linear infinite; color: transparent !important; }
     @keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
-
-    /* small niceties */
     .badge { @apply inline-block px-3 py-1 text-sm rounded-full font-medium; }
     .soft-card { background: #fbfbfb; border-radius: 14px; box-shadow: 0 6px 18px rgba(13, 12, 11, 0.06); }
-    /* ensure pet-photo covers nicely on mobile tall */
     .header-img { height: 56vw; max-height: 240px; object-fit: cover; width: 100%; }
   </style>
 </head>
 <body class="bg-gradient-to-b from-orange-50 via-white to-orange-50 min-h-screen flex items-center justify-center p-4">
 
-  <!-- Container -->
-  <main id="root" class="w-full max-w-md">
-    <!-- Card -->
-    <article id="card" class="bg-white rounded-3xl shadow-2xl overflow-hidden fade-up">
-      <!-- Header image -->
-      <div class="relative">
-        <img id="pet-photo" src="logo.png" alt="pet photo" class="header-img skeleton w-full">
-        <!-- avatar overlap -->
-        <div class="absolute -bottom-12 left-1/2 -translate-x-1/2">
-          <img id="pet-avatar" class="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover skeleton" src="logo.png" alt="avatar">
+<main id="root" class="w-full max-w-md">
+  <article id="card" class="bg-white rounded-3xl shadow-2xl overflow-hidden fade-up">
+    <div class="relative">
+      <img id="pet-photo" src="furtagPH.png" alt="pet photo" class="header-img skeleton w-full">
+      <div class="absolute -bottom-12 left-1/2 -translate-x-1/2">
+        <img id="pet-avatar" class="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover skeleton" src="Furtagph.png" alt="avatar">
+      </div>
+    </div>
+
+    <section class="p-6 pt-14 space-y-6">
+      <div id="pet-section" class="space-y-3">
+        <div class="text-center">
+          <h1 id="pet-name" class="text-2xl font-bold text-gray-900 skeleton"> </h1>
+          <p id="pet-sub" class="text-sm text-gray-500 mt-1 skeleton"> </p>
         </div>
+
+        <div id="pet-badges" class="flex flex-wrap justify-center gap-2 mt-2"></div>
+
+        <ul id="pet-details" class="mt-3 text-gray-700 space-y-2 text-sm">
+          <li><span class="font-medium">DOB:</span> <span id="pet-dob" class="ml-1 skeleton"></span> <span id="pet-age" class="ml-2 text-xs text-gray-500"></span></li>
+          <li><span class="font-medium">Food:</span> <span id="pet-food" class="ml-1 skeleton"></span></li>
+          <li><span class="font-medium">Allergies:</span> <span id="pet-allergies" class="ml-1 skeleton"></span></li>
+          <li><span class="font-medium">Medical Condition:</span> <span id="pet-medical" class="ml-1 skeleton"></span></li>
+        </ul>
       </div>
 
-      <!-- body -->
-      <section class="p-6 pt-14 space-y-6">
-        <!-- PET INFO -->
-        <div id="pet-section" class="space-y-3">
-          <div class="text-center">
-            <h1 id="pet-name" class="text-2xl font-bold text-gray-900 skeleton"> </h1>
-            <p id="pet-sub" class="text-sm text-gray-500 mt-1 skeleton"> </p>
+      <div id="owner-section" class="space-y-4">
+        <div class="soft-card p-4 bg-white rounded-2xl">
+          <div class="flex items-center gap-3">
+            <div id="owner-avatar" class="w-12 h-12 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-semibold skeleton"></div>
+            <div>
+              <h2 id="owner-fullName" class="text-lg font-semibold text-gray-900 skeleton"></h2>
+              <p class="text-xs text-gray-500">Pet Owner</p>
+            </div>
           </div>
 
-          <!-- badges -->
-          <div id="pet-badges" class="flex flex-wrap justify-center gap-2 mt-2">
-            <!-- badges injected here -->
+          <div class="mt-3 flex justify-center gap-3" id="contact-row">
+            <a id="owner-instagram" class="contact-btn w-10 h-10 flex items-center justify-center rounded-full text-white shadow bg-pink-500 hover:scale-110 transition" target="_blank" rel="noopener">
+              <i class="fab fa-instagram"></i>
+            </a>
+            <a id="owner-facebook" class="contact-btn w-10 h-10 flex items-center justify-center rounded-full text-white shadow bg-blue-600 hover:scale-110 transition" target="_blank" rel="noopener">
+              <i class="fab fa-facebook-f"></i>
+            </a>
+            <a id="owner-email" class="contact-btn w-10 h-10 flex items-center justify-center rounded-full text-white shadow bg-red-500 hover:scale-110 transition" rel="noopener">
+              <i class="fas fa-envelope"></i>
+            </a>
+            <a id="owner-phone" class="contact-btn w-10 h-10 flex items-center justify-center rounded-full text-white shadow bg-green-500 hover:scale-110 transition" rel="noopener">
+              <i class="fas fa-phone"></i>
+            </a>
           </div>
 
-          <!-- details list -->
-          <ul id="pet-details" class="mt-3 text-gray-700 space-y-2 text-sm">
-            <li><span class="font-medium">DOB:</span> <span id="pet-dob" class="ml-1 skeleton"></span> <span id="pet-age" class="ml-2 text-xs text-gray-500"></span></li>
-            <li><span class="font-medium">Food:</span> <span id="pet-food" class="ml-1 skeleton"></span></li>
-            <li><span class="font-medium">Allergies:</span> <span id="pet-allergies" class="ml-1 skeleton"></span></li>
-            <li><span class="font-medium">Medical Condition:</span> <span id="pet-medical" class="ml-1 skeleton"></span></li>
-          </ul>
-        </div>
-
-        <!-- OWNER DETAILS (combined card) -->
-        <div id="owner-section" class="space-y-4">
-          <div class="soft-card p-4 bg-white rounded-2xl">
-            <!-- Top row: avatar + name -->
-            <div class="flex items-center gap-3">
-              <div id="owner-avatar"
-                   class="w-12 h-12 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-semibold skeleton">
-                <!-- initials injected -->
+          <div class="mt-4 rounded-xl border border-gray-200 p-3">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 shrink-0 rounded-lg bg-orange-100 flex items-center justify-center">
+                <i class="fas fa-location-dot text-orange-600"></i>
               </div>
-              <div>
-                <h2 id="owner-fullName" class="text-lg font-semibold text-gray-900 skeleton"></h2>
-                <p class="text-xs text-gray-500">Pet Owner</p>
-              </div>
+              <div id="owner-address" class="not-italic text-sm text-gray-700 leading-relaxed skeleton"></div>
             </div>
-
-            <!-- Contacts -->
-            <div class="mt-3 flex justify-center gap-3" id="contact-row">
-              <a id="owner-instagram" class="contact-btn w-10 h-10 flex items-center justify-center rounded-full text-white shadow bg-pink-500 hover:scale-110 transition" target="_blank" rel="noopener">
-                <i class="fab fa-instagram"></i>
-              </a>
-              <a id="owner-facebook" class="contact-btn w-10 h-10 flex items-center justify-center rounded-full text-white shadow bg-blue-600 hover:scale-110 transition" target="_blank" rel="noopener">
-                <i class="fab fa-facebook-f"></i>
-              </a>
-              <a id="owner-email" class="contact-btn w-10 h-10 flex items-center justify-center rounded-full text-white shadow bg-red-500 hover:scale-110 transition" rel="noopener">
-                <i class="fas fa-envelope"></i>
-              </a>
-              <a id="owner-phone" class="contact-btn w-10 h-10 flex items-center justify-center rounded-full text-white shadow bg-green-500 hover:scale-110 transition" rel="noopener">
-                <i class="fas fa-phone"></i>
-              </a>
-            </div>
-
-            <!-- Address block -->
-            <div class="mt-4 rounded-xl border border-gray-200 p-3">
-              <div class="flex items-start gap-3">
-                <div class="w-9 h-9 shrink-0 rounded-lg bg-orange-100 flex items-center justify-center">
-                  <i class="fas fa-location-dot text-orange-600"></i>
-                </div>
-                <div id="owner-address" class="not-italic text-sm text-gray-700 leading-relaxed skeleton">
-                  <!-- lines injected -->
-                </div>
-              </div>
-              <a id="owner-location" class="mt-3 block w-full text-center bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition shadow hidden" target="_blank" rel="noopener">
-                <i class="fas fa-map-marker-alt mr-2"></i> Open in Maps
-              </a>
-            </div>
+            <a id="owner-location" class="mt-3 block w-full text-center bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-medium transition shadow hidden" target="_blank" rel="noopener">
+              <i class="fas fa-map-marker-alt mr-2"></i> Open in Maps
+            </a>
           </div>
         </div>
-      </section>
-    </article>
-  </main>
+      </div>
+    </section>
+  </article>
+</main>
 
-  <!-- Friendly error card (hidden by default) -->
-  <div id="error-card" class="max-w-md mx-auto mt-6 hidden">
-    <div class="bg-white rounded-2xl p-6 shadow-lg text-center">
-      <div class="text-red-500 text-4xl mb-3">⚠️</div>
-      <h3 class="text-lg font-semibold mb-2">Profile not found</h3>
-      <p class="text-sm text-gray-600 mb-4">We couldn't find this pet or owner. The link may be invalid or removed.</p>
-      <a href="/" class="inline-block bg-orange-500 text-white px-4 py-2 rounded-lg">Back to home</a>
-    </div>
+<div class="mt-4 text-center hidden">
+  <button id="test-email-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+    Send Test Email
+  </button>
+</div>
+
+<div id="error-card" class="max-w-md mx-auto mt-6 hidden">
+  <div class="bg-white rounded-2xl p-6 shadow-lg text-center">
+    <div class="text-red-500 text-4xl mb-3">⚠️</div>
+    <h3 class="text-lg font-semibold mb-2">Profile not found</h3>
+    <p class="text-sm text-gray-600 mb-4">We couldn't find this pet or owner. The link may be invalid or removed.</p>
+    <a href="/" class="inline-block bg-orange-500 text-white px-4 py-2 rounded-lg">Back to home</a>
   </div>
+</div>
 
 <script type="module">
-  import { db } from './firebase.js';
-  import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+/* --- EmailJS (ESM) --- */
+import { init as emailInit, send as emailSend } from 'https://cdn.jsdelivr.net/npm/emailjs-com@3.2.0/+esm';
 
-  const DEFAULT_PET_IMG = 'logo.png';
+emailInit('DWwOI1OjMTnLOP0Jm'); // your EmailJS public key
 
-  function showError() {
-    document.getElementById('card').classList.add('hidden');
-    document.getElementById('error-card').classList.remove('hidden');
+// Module-scoped helper you can call anywhere below
+
+const sendEmail = async (ownerEmail, ownerName, petName, lat, lng, scannerLat, scannerLng ) => {
+  if (!ownerEmail) {
+    console.warn("Owner email missing, skipping send.");
+    return;
   }
-
-  function clearSkeletons() {
-    document.querySelectorAll('.skeleton').forEach(el => el.classList.remove('skeleton'));
-  }
-
-  function ageFromDOB(dobStr) {
-    if (!dobStr) return '';
-    
-    let dob;
-    if (typeof dobStr === 'string') {
-      const [year, month, day] = dobStr.split('-').map(Number);
-      dob = new Date(year, month - 1, day); // month is zero-based
-    } else {
-      dob = new Date(dobStr);
-    }
-
-    if (isNaN(dob)) return '';
-    
-    const now = new Date();
-    let years = now.getFullYear() - dob.getFullYear();
-    let months = now.getMonth() - dob.getMonth();
-    if (months < 0) { years -= 1; months += 12; }
-    if (years < 0) return '';
-    if (years === 0 && months === 0) return '(less than 1 month)';
-    if (years === 0) return `(${months} mo)`;
-    return `(${years} yr${years > 1 ? 's' : ''}${months ? ` ${months} mo` : ''})`;
-  }
-
-  function makeBadge(text, type = 'neutral') {
-    const el = document.createElement('span');
-    el.textContent = text;
-    el.className = 'badge';
-    if (type === 'neutral') el.classList.add('bg-orange-100', 'text-orange-700');
-    if (type === 'alert') el.classList.add('bg-red-100', 'text-red-600');
-    if (type === 'info') el.classList.add('bg-sky-100', 'text-sky-700');
-    el.style.margin = '2px';
-    return el;
-  }
-
-  function escapeHtml(s) {
-    if (!s) return '';
-    return s.replaceAll('&', '&amp;')
-            .replaceAll('<', '&lt;')
-            .replaceAll('>', '&gt;')
-            .replaceAll('"', '&quot;')
-            .replaceAll("'", '&#39;');
-  }
-
-  function setContactIcon(el, url) {
-    if (url) {
-      el.href = url;
-      el.style.opacity = '1';
-      el.style.pointerEvents = 'auto';
-    } else {
-      el.href = '#';
-      el.style.opacity = '0.4';
-      el.style.pointerEvents = 'none';
-    }
-  }
-
-  function initials(str='') {
-    return str
-      .split(' ')
-      .filter(Boolean)
-      .slice(0,2)
-      .map(s => s[0].toUpperCase())
-      .join('') || '—';
-  }
-
-  const params = new URLSearchParams(window.location.search);
-  const petId = params.get('id');
-  if (!petId) { showError(); throw new Error('pet id missing'); }
-
-  // Elements
-  const petPhoto = document.getElementById('pet-photo');
-  const petAvatar = document.getElementById('pet-avatar');
-  const petNameEl = document.getElementById('pet-name');
-  const petSubEl = document.getElementById('pet-sub');
-  const badgesWrap = document.getElementById('pet-badges');
-  const petDobEl = document.getElementById('pet-dob');
-  const petAgeEl = document.getElementById('pet-age');
-  const petFoodEl = document.getElementById('pet-food');
-  const petAllergiesEl = document.getElementById('pet-allergies');
-  const petMedicalEl = document.getElementById('pet-medical');
-
-  const ownerNameEl = document.getElementById('owner-fullName');
-  const ownerAvatarEl = document.getElementById('owner-avatar');
-  const ownerInstagram = document.getElementById('owner-instagram');
-  const ownerFacebook = document.getElementById('owner-facebook');
-  const ownerEmail = document.getElementById('owner-email');
-  const ownerPhone = document.getElementById('owner-phone');
-  const ownerAddress = document.getElementById('owner-address');
-  const ownerLocationBtn = document.getElementById('owner-location');
-
-  petPhoto.onerror = () => petPhoto.src = DEFAULT_PET_IMG;
-  petAvatar.onerror = () => petAvatar.src = DEFAULT_PET_IMG;
-
-
-  (async function load() {
-    try {
-      // Fetch pet
-      const petSnap = await getDoc(doc(db, 'pets', petId));
-      if (!petSnap.exists()) { showError(); return; }
-      const pet = petSnap.data();
-
-      // Populate pet info
-      petPhoto.src = pet.photo || DEFAULT_PET_IMG;
-      petAvatar.src = pet.photo || DEFAULT_PET_IMG;
-      petNameEl.textContent = pet.name || 'Unnamed';
-
-      const breedText = pet.breed || '';
-      const colorText = pet.color || '';
-      petSubEl.textContent = breedText && colorText
-        ? `${breedText} • ${colorText}`
-        : breedText || colorText || '';
-
-      const dobValue = pet.DOB || pet.dob || '';
-      petDobEl.textContent = dobValue || '—';
-      petAgeEl.textContent = dobValue ? ageFromDOB(dobValue) : '';
-
-      petFoodEl.textContent = pet.food || '—';
-      petAllergiesEl.textContent = pet.allergies || '—';
-      petMedicalEl.textContent = pet.medicalCondition || '—';
-
-      // Badges
-      badgesWrap.innerHTML = '';
-      if (breedText) badgesWrap.appendChild(makeBadge(breedText, 'neutral'));
-      if (colorText) badgesWrap.appendChild(makeBadge(colorText, 'info'));
-      if (pet.allergies) {
-        const allergyType = pet.allergies.toLowerCase() === 'none' ? 'neutral' : 'alert';
-        badgesWrap.appendChild(makeBadge(pet.allergies, allergyType));
-      }
-      if (pet.medicalCondition) {
-        const medType = pet.medicalCondition.toLowerCase() === 'healthy' ? 'neutral' : 'alert';
-        badgesWrap.appendChild(makeBadge(pet.medicalCondition, medType));
-      }
-
-      // No owner? Hide section
-      if (!pet.ownerID) {
-        document.getElementById('owner-section').remove();
-        clearSkeletons();
-        return;
-      }
-
-      // Fetch owner
-      const ownerSnap = await getDoc(doc(db, 'users', pet.ownerID));
-      if (!ownerSnap.exists()) {
-        ownerNameEl.textContent = 'Owner not found';
-        ownerAddress.innerHTML = '<div class="text-gray-400">No address provided</div>';
-        clearSkeletons();
-        return;
-      }
-
-      const owner = ownerSnap.data();
-      ownerNameEl.textContent = owner.fullName || '—';
-      ownerAvatarEl.textContent = initials(owner.fullName || '');
-      ownerAvatarEl.classList.remove('skeleton');
-
-      // Contact icons (same IDs, unified in one card)
-      setContactIcon(ownerInstagram, owner.instagramLink);
-      setContactIcon(ownerFacebook, owner.facebookLink);
-      setContactIcon(ownerEmail, owner.emailAddress ? `mailto:${owner.emailAddress}` : '');
-      setContactIcon(ownerPhone, owner.phoneNumber ? `tel:${owner.phoneNumber}` : '');
-
-      // Address (nested under address)
-      const addr = owner.address || {};
-      const addrLines = [];
-      if (addr.street) addrLines.push(addr.street);
-
-      let cityLine = '';
-      if (addr.city) cityLine += addr.city;
-      if (addr.province) cityLine += (cityLine ? ', ' : '') + addr.province;
-      if (addr.zipcode) cityLine += (cityLine ? ' ' : '') + addr.zipcode;
-      if (cityLine) addrLines.push(cityLine);
-
-      if (addr.country) addrLines.push(addr.country);
-
-      ownerAddress.innerHTML = addrLines.length
-        ? addrLines.map(l => `<div>${escapeHtml(l)}</div>`).join('')
-        : '<span class="text-gray-400 italic">No address provided</span>';
-
-      // Map link
-      if (owner.location?.lat && owner.location?.lng) {
-        ownerLocationBtn.href = `https://www.google.com/maps?q=${owner.location.lat},${owner.location.lng}`;
-        ownerLocationBtn.classList.remove('hidden');
-      }
-
-      // Remove skeletons
-      clearSkeletons();
-    } catch (err) {
-      console.error('load error', err);
-      showError();
-    }
-  })();
-
-(async function () {
-  const NOTIFY_URL = "/.netlify/functions/pet-found-email-gmail";
-  const petId = new URLSearchParams(window.location.search).get("id");
-  if (!petId) return;
-
-  // Client-side throttle: prevent multiple notifications within 30 minutes
-  const key = `scanNotify:${petId}`;
-  const windowMinutes = 30;
   try {
-    const last = localStorage.getItem(key);
-    const now = Date.now();
-    if (last && now - Number(last) < windowMinutes * 60 * 1000) return;
-    localStorage.setItem(key, String(now));
-  } catch (e) {
-    console.warn("LocalStorage error:", e);
+    await emailSend('service_qieowuf', 'template_oys2wkt', {
+      to_email: ownerEmail,   // MUST be valid email
+      to_name: ownerName || 'Pet Owner',
+      petname: petName || 'Your Pet',
+      lat: lat || '',
+      lng: lng || '',
+      scanner_lat: lat || '',  // Latitude of the QR scanner
+      scanner_lng: lng || ''   // Longitude of the QR scanner
+    });
+    console.log("Email sent successfully to", ownerEmail);
+  } catch (err) {
+    console.error("EmailJS send error:", err);
   }
+};
 
-  const ua = navigator.userAgent || "";
 
-  async function sendEmail(ownerEmail, extra = {}) {
-    if (!ownerEmail) return;
 
-    const payload = {
-      to: ownerEmail,
-      subject: "Your Pet Has Been Found!",
-      message: `
-        <p>Hi,</p>
-        <p>Your pet with ID <strong>${petId}</strong> was scanned.</p>
-        ${extra.lat && extra.lng ? `<p>Location: ${extra.lat}, ${extra.lng}</p>` : ""}
-        <p>Device info: ${ua}</p>
-        <p>Check your pet's profile <a href="${window.location.href}">here</a>.</p>
-      `
-    };
+import { db } from './firebase.js';
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
-    try {
-      const res = await fetch(NOTIFY_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) console.warn("Notify failed:", await res.text());
-    } catch (err) {
-      console.warn("Notify error:", err);
-    }
-  }
 
+
+
+const DEFAULT_PET_IMG = 'logo.png';
+
+function showError() {
+  document.getElementById('card').classList.add('hidden');
+  document.getElementById('error-card').classList.remove('hidden');
+}
+
+function clearSkeletons() {
+  document.querySelectorAll('.skeleton').forEach(el => el.classList.remove('skeleton'));
+}
+
+function ageFromDOB(dobStr) {
+  if (!dobStr) return '';
+  let dob = (typeof dobStr === 'string')
+    ? new Date(...dobStr.split('-').map((v,i)=>i===1?v-1:v))
+    : new Date(dobStr);
+  if (isNaN(dob)) return '';
+  const now = new Date();
+  let years = now.getFullYear() - dob.getFullYear();
+  let months = now.getMonth() - dob.getMonth();
+  if (months < 0) { years--; months += 12; }
+  if (years < 0) return '';
+  if (years === 0 && months === 0) return '(less than 1 month)';
+  if (years === 0) return `(${months} mo)`;
+  return `(${years} yr${years>1?'s':''}${months?` ${months} mo`:''})`;
+}
+
+function makeBadge(text, type='neutral') {
+  const el = document.createElement('span');
+  el.textContent = text;
+  el.className = 'badge';
+  if(type==='neutral') el.classList.add('bg-orange-100','text-orange-700');
+  if(type==='alert') el.classList.add('bg-red-100','text-red-600');
+  if(type==='info') el.classList.add('bg-sky-100','text-sky-700');
+  el.style.margin='2px';
+  return el;
+}
+
+function escapeHtml(s) {
+  if(!s) return '';
+  return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#39;");
+}
+
+function setContactIcon(el,url){
+  if(url){ el.href=url; el.style.opacity='1'; el.style.pointerEvents='auto'; }
+  else{ el.href='#'; el.style.opacity='0.4'; el.style.pointerEvents='none'; }
+}
+
+function initials(str=''){ return str.split(' ').filter(Boolean).slice(0,2).map(s=>s[0].toUpperCase()).join('')||'—'; }
+
+const params = new URLSearchParams(window.location.search);
+const petId = params.get('id');
+if(!petId){ showError(); throw new Error('pet id missing'); }
+
+const petPhoto = document.getElementById('pet-photo');
+const petAvatar = document.getElementById('pet-avatar');
+const petNameEl = document.getElementById('pet-name');
+const petSubEl = document.getElementById('pet-sub');
+const badgesWrap = document.getElementById('pet-badges');
+const petDobEl = document.getElementById('pet-dob');
+const petAgeEl = document.getElementById('pet-age');
+const petFoodEl = document.getElementById('pet-food');
+const petAllergiesEl = document.getElementById('pet-allergies');
+const petMedicalEl = document.getElementById('pet-medical');
+
+const ownerNameEl = document.getElementById('owner-fullName');
+const ownerAvatarEl = document.getElementById('owner-avatar');
+const ownerInstagram = document.getElementById('owner-instagram');
+const ownerFacebook = document.getElementById('owner-facebook');
+const ownerEmail = document.getElementById('owner-email');
+const ownerPhone = document.getElementById('owner-phone');
+const ownerAddress = document.getElementById('owner-address');
+const ownerLocationBtn = document.getElementById('owner-location');
+
+petPhoto.onerror = ()=>petPhoto.src=DEFAULT_PET_IMG;
+petAvatar.onerror = ()=>petAvatar.src=DEFAULT_PET_IMG;
+
+(async function load(){
+  try{
+    const petSnap = await getDoc(doc(db,'pets',petId));
+    if(!petSnap.exists()){ showError(); return; }
+    const pet = petSnap.data();
+
+    petPhoto.src = pet.photo||DEFAULT_PET_IMG;
+    petAvatar.src = pet.photo||DEFAULT_PET_IMG;
+    petNameEl.textContent = pet.name||'Unnamed';
+
+    const breedText = pet.breed||'';
+    const colorText = pet.color||'';
+    petSubEl.textContent = breedText && colorText ? `${breedText} • ${colorText}` : breedText||colorText||'';
+
+    const dobValue = pet.DOB||pet.dob||'';
+    petDobEl.textContent = dobValue||'—';
+    petAgeEl.textContent = dobValue?ageFromDOB(dobValue):'';
+
+    petFoodEl.textContent = pet.food||'—';
+    petAllergiesEl.textContent = pet.allergies||'—';
+    petMedicalEl.textContent = pet.medicalCondition||'—';
+
+    badgesWrap.innerHTML='';
+    if(breedText) badgesWrap.appendChild(makeBadge(breedText,'neutral'));
+    if(colorText) badgesWrap.appendChild(makeBadge(colorText,'info'));
+    if(pet.allergies) badgesWrap.appendChild(makeBadge(pet.allergies.toLowerCase()==='none'?'neutral':'alert'));
+    if(pet.medicalCondition) badgesWrap.appendChild(makeBadge(pet.medicalCondition.toLowerCase()==='healthy'?'neutral':'alert'));
+
+    if(!pet.ownerID){ document.getElementById('owner-section').remove(); clearSkeletons(); return; }
+
+    const ownerSnap = await getDoc(doc(db,'users',pet.ownerID));
+    if(!ownerSnap.exists()){ ownerNameEl.textContent='Owner not found'; ownerAddress.innerHTML='<div class="text-gray-400">No address provided</div>'; clearSkeletons(); return; }
+
+    const owner = ownerSnap.data();
+    ownerNameEl.textContent = owner.fullName||'—';
+    ownerAvatarEl.textContent = initials(owner.fullName||'');
+    ownerAvatarEl.classList.remove('skeleton');
+
+    setContactIcon(ownerInstagram, owner.instagramLink);
+    setContactIcon(ownerFacebook, owner.facebookLink);
+    setContactIcon(ownerEmail, owner.emailAddress?`mailto:${owner.emailAddress}`:'');
+    setContactIcon(ownerPhone, owner.phoneNumber?`tel:${owner.phoneNumber}`:'');
+
+    const addr = owner.address||{};
+    const addrLines = [];
+    if(addr.street) addrLines.push(addr.street);
+    let cityLine='';
+    if(addr.city) cityLine+=addr.city;
+    if(addr.province) cityLine+=(cityLine?', ':'')+addr.province;
+    if(addr.zipcode) cityLine+=(cityLine?' ':'')+addr.zipcode;
+    if(cityLine) addrLines.push(cityLine);
+    if(addr.country) addrLines.push(addr.country);
+    ownerAddress.innerHTML = addrLines.length? addrLines.map(l=>`<div>${escapeHtml(l)}</div>`).join(''):'<span class="text-gray-400 italic">No address provided</span>';
+
+    if(owner.location?.lat && owner.location?.lng){ ownerLocationBtn.href=`https://www.google.com/maps?q=${owner.location.lat},${owner.location.lng}`; ownerLocationBtn.classList.remove('hidden'); }
+
+    clearSkeletons();
+
+  }catch(err){ console.error('load error',err); showError(); }
+
+  document.getElementById('test-email-btn').click();
+})();
+
+// IMPORTANT: Remove the sendEmail function from here, module will use the global one
+// Notification function now uses global sendEmail
+// In notifyOwner, just call the module function:
+(async function notifyOwner() {
   try {
-    // Fetch pet from Firestore
+    // 1️⃣ Get the pet document
     const petSnap = await getDoc(doc(db, 'pets', petId));
     if (!petSnap.exists()) return;
 
     const pet = petSnap.data();
-    if (!pet.ownerID) return;
+    if (!pet.ownerID) return; // ownerID references the user
 
-    // Fetch owner
+    // 2️⃣ Throttle notifications per pet (30 min)
+    const key = `scanNotify:${petId}`;
+    const windowMinutes = 30;
+    try {
+      const last = localStorage.getItem(key);
+      const now = Date.now();
+      if (last && now - Number(last) < windowMinutes * 60 * 1000) return;
+      localStorage.setItem(key, String(now));
+    } catch (e) {
+      console.warn("localStorage error", e);
+    }
+
+    // 3️⃣ Get the owner document
     const ownerSnap = await getDoc(doc(db, 'users', pet.ownerID));
     if (!ownerSnap.exists()) return;
 
     const owner = ownerSnap.data();
-    const ownerEmail = owner.emailAddress;
-    if (!ownerEmail) return;
-
-    // Send email with geolocation if available
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => sendEmail(ownerEmail, { lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => sendEmail(ownerEmail),
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    } else {
-      sendEmail(ownerEmail);
+    if (!owner.emailAddress) {
+      console.warn('Owner has no email address');
+      return;
     }
+
+    // 4️⃣ Get scanner’s current location
+    let lat = '';
+    let lng = '';
+    if (navigator.geolocation) {
+      await new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => { 
+            lat = pos.coords.latitude; 
+            lng = pos.coords.longitude; 
+            resolve(); 
+          },
+          (err) => {
+            console.warn("Scanner location not available", err);
+            resolve();
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      });
+    }
+
+    // 5️⃣ Prepare variables for EmailJS template
+    const ownerName = owner.fullName || 'Pet Owner';
+    const petName = pet.name || 'Your Pet';
+
+    console.log(`Sending email to ${owner.emailAddress} with scanner location ${lat},${lng}...`);
+
+    // 6️⃣ Send email
+    await sendEmail(owner.emailAddress, ownerName, petName, lat, lng);
+    console.log('Email sent successfully');
+
   } catch (err) {
-    console.error("Error fetching data:", err);
+    console.error("notifyOwner error", err);
   }
 })();
+
+
+
+document.getElementById('test-email-btn').addEventListener('click', async () => {
+  try {
+    if (!petId) {
+      console.warn('Pet ID missing');
+      return;
+    }
+
+    // 1️⃣ Fetch pet document
+    const petSnap = await getDoc(doc(db, 'pets', petId));
+    if (!petSnap.exists()) {
+      console.warn('Pet not found');
+      return;
+    }
+    const pet = petSnap.data();
+
+    if (!pet.ownerID) {
+      console.warn('Pet has no ownerID');
+      return;
+    }
+
+    // 2️⃣ Fetch owner document
+    const ownerSnap = await getDoc(doc(db, 'users', pet.ownerID));
+    if (!ownerSnap.exists()) {
+      console.warn('Owner not found');
+      return;
+    }
+    const owner = ownerSnap.data();
+
+    if (!owner.emailAddress) {
+      console.warn('Owner email not available');
+      return;
+    }
+
+    // 3️⃣ Get scanner's location
+    let lat = '';
+    let lng = '';
+    if (navigator.geolocation) {
+      await new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            lat = pos.coords.latitude;
+            lng = pos.coords.longitude;
+            resolve();
+          },
+          (err) => {
+            console.warn("Scanner location not available", err);
+            resolve();
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      });
+    }
+
+    // 4️⃣ Prepare variables for EmailJS template
+    const ownerName = owner.fullName || 'Pet Owner';
+    const petName = pet.name || 'Your Pet';
+
+    console.log(`Sending test email to ${owner.emailAddress} with scanner location ${lat},${lng}...`);
+
+    // 5️⃣ Send email
+    await sendEmail(owner.emailAddress, ownerName, petName, lat, lng);
+    console.log('Test email sent successfully');
+    
+
+  } catch (err) {
+    console.error('Test email error:', err);
+    alert('Failed to send test email. Check console.');
+  }
+});
+
+
 
 </script>
 
