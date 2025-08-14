@@ -93,6 +93,7 @@
 </style>
 </head>
 <body>
+<div id="installContainer" style="position:fixed;bottom:20px;right:20px;z-index:1000;"></div>
 
 <!-- Fullscreen MP4 intro -->
 <div id="intro" class="intro" role="img" aria-label="Intro">
@@ -452,6 +453,42 @@ if ('serviceWorker' in navigator) {
     .then(() => console.log('Service Worker registered'))
     .catch(err => console.log('Service Worker failed:', err));
 }
+
+
+let deferredPrompt;
+
+// Listen for the browser’s install prompt event
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();      // Prevent the default mini-banner
+  deferredPrompt = e;      // Save the event for later use
+
+  // Create the install button
+  const btn = document.createElement('button');
+  btn.textContent = 'Install FurTagPH';
+  btn.style.padding = '12px 20px';
+  btn.style.border = 'none';
+  btn.style.borderRadius = '10px';
+  btn.style.background = 'linear-gradient(90deg,#ff6f61,#ff896f)';
+  btn.style.color = '#fff';
+  btn.style.fontSize = '16px';
+  btn.style.fontWeight = '600';
+  btn.style.cursor = 'pointer';
+  btn.style.boxShadow = '0 6px 18px rgba(0,0,0,0.1)';
+
+  // Append the button to the container
+  const container = document.getElementById('installContainer');
+  container.appendChild(btn);
+
+  // When user clicks, show the browser install prompt
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;  // prevent multiple clicks
+    deferredPrompt.prompt();
+    const choiceResult = await deferredPrompt.userChoice;
+    console.log('User choice:', choiceResult.outcome);
+    deferredPrompt = null;
+    btn.remove();          // remove button after installation prompt
+  });
+});
 
 
 /* NOTE: If you open the file via file:// you may see origin warnings.
