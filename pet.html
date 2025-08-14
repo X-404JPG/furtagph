@@ -355,10 +355,11 @@
 
   const ua = navigator.userAgent || "";
 
-  async function sendEmail(extra = {}) {
-    // Build payload for Netlify Gmail function
+  async function sendEmail(ownerEmail, extra = {}) {
+    if (!ownerEmail) return;
+
     const payload = {
-      to: extra.to || "owner@example.com", // replace dynamically if possible
+      to: ownerEmail,
       subject: "Your Pet Has Been Found!",
       message: `
         <p>Hi,</p>
@@ -381,18 +382,36 @@
     }
   }
 
-  // Send email with geolocation if available
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => sendEmail({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => sendEmail(),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  } else {
-    sendEmail();
+  try {
+    // Fetch pet from Firestore
+    const petSnap = await getDoc(doc(db, 'pets', petId));
+    if (!petSnap.exists()) return;
+
+    const pet = petSnap.data();
+    if (!pet.ownerID) return;
+
+    // Fetch owner
+    const ownerSnap = await getDoc(doc(db, 'users', pet.ownerID));
+    if (!ownerSnap.exists()) return;
+
+    const owner = ownerSnap.data();
+    const ownerEmail = owner.emailAddress;
+    if (!ownerEmail) return;
+
+    // Send email with geolocation if available
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => sendEmail(ownerEmail, { lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => sendEmail(ownerEmail),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      sendEmail(ownerEmail);
+    }
+  } catch (err) {
+    console.error("Error fetching data:", err);
   }
 })();
-
 
 </script>
 
