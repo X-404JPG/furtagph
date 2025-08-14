@@ -10,6 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "cloudinary": "^2.7.0"
+    "@sendgrid/mail": "^8.1.5",
+    "cloudinary": "^2.7.0",
+    "firebase-admin": "^13.4.0"
   }
 }
