@@ -1,12 +1,21 @@
 {
   "name": "FurTagPH",
-  "short_name": "FurTagPH",
-  "start_url": "./auth.html",
+  "short_name": "FurTag",
+  "start_url": "/auth.html",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#fbfbfc",
   "theme_color": "#ff6f61",
   "icons": [
-    { "src": "furtagph.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "furtagph-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "furtagph-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "furtagph-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }
