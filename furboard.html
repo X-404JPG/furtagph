@@ -136,6 +136,64 @@
   visibility: visible;
 }
 
+/* Toggle Switch Styling */
+/* --- Privacy Toggle --- */
+.privacy-toggle {
+  margin: 6px 0 10px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #444;
+}
+
+.privacy-toggle label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 6px;
+}
+
+/* Hide the default checkbox */
+.privacy-toggle input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 38px;
+  height: 20px;
+  background: #ccc;
+  border-radius: 20px;
+  position: relative;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+/* Toggle knob */
+.privacy-toggle input[type="checkbox"]::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* Checked state */
+.privacy-toggle input[type="checkbox"]:checked {
+  background: #ff6f61; /* highlight color */
+}
+
+.privacy-toggle input[type="checkbox"]:checked::after {
+  transform: translateX(18px);
+}
+
+
+
+
 
   /* modals */
   .modal-backdrop { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.45); z-index:9999; padding:16px; }
@@ -840,13 +898,14 @@ async function loadUserPets(uid) {
 
 
 
-function createPetCard(id, data, idx){
+function createPetCard(id, data, idx) {
   const card = document.createElement('div');
   card.className = 'pet-card';
-  if(!initialPetsLoaded) card.classList.add('animate-in');
+  if (!initialPetsLoaded) card.classList.add('animate-in');
   card.style.animationDelay = (idx * 40) + 'ms';
   card.tabIndex = 0;
 
+  // --- Status Badge ---
   const status = (data.status || 'unknown').toString().toLowerCase();
   const badge = document.createElement('div');
   const badgeClass = (status === 'active' ? 'active' : (status === 'owned' ? 'owned' : (status === 'deleted' ? 'deleted' : 'active')));
@@ -854,9 +913,10 @@ function createPetCard(id, data, idx){
   badge.textContent = data.status || 'Unknown';
   card.appendChild(badge);
 
+  // --- Pet Photo ---
   const photoWrap = document.createElement('div');
   photoWrap.className = 'pet-photo';
-  if(data.photo){
+  if (data.photo) {
     const img = document.createElement('img');
     img.src = data.photo;
     img.alt = data.name || 'pet';
@@ -866,10 +926,61 @@ function createPetCard(id, data, idx){
     photoWrap.innerHTML = '<div class="small muted">No photo</div>';
   }
 
+  // --- Pet Name ---
   const name = document.createElement('div');
   name.className = 'pet-name';
   name.textContent = data.name || 'Unnamed';
 
+  // --- Privacy Toggle ---
+  const privacyWrap = document.createElement('div');
+  privacyWrap.className = 'privacy-toggle';
+
+  const label = document.createElement('label');
+  label.textContent = 'Missing: ';
+
+  const toggle = document.createElement('input');
+  toggle.type = 'checkbox';
+  toggle.checked = Number(data.privacy) === 1;
+
+  // stop card click from firing when interacting with the toggle area
+  const stop = (e) => e.stopPropagation();
+  ['click', 'pointerdown', 'touchstart', 'mousedown', 'mouseup'].forEach(evt => {
+    toggle.addEventListener(evt, stop);
+    label.addEventListener(evt, stop);
+    privacyWrap.addEventListener(evt, stop);
+  });
+  // keyboard safety (space/enter on the checkbox)
+  toggle.addEventListener('keydown', (e) => {
+    if (e.key === ' ' || e.key === 'Enter') e.stopPropagation();
+  });
+
+  toggle.addEventListener('change', async () => {
+    if (toggle.checked) {
+      const ok = confirm(
+        "Turn on Missing Mode?\n\nThis will mark your pet as missing and may show your pet’s profile and your contact details to people who scan the tag so they can reach you."
+      );
+      if (!ok) {
+        toggle.checked = false;
+        return;
+      }
+    }
+    try {
+      await db.collection('pets').doc(id).update({
+        privacy: toggle.checked ? 1 : 0,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch (err) {
+      console.error("Failed to update privacy:", err);
+      // revert UI on failure
+      toggle.checked = !toggle.checked;
+      alert("Couldn't update the missing setting. Please try again.");
+    }
+  });
+
+  label.appendChild(toggle);
+  privacyWrap.appendChild(label);
+
+  // --- Actions ---
   const actions = document.createElement('div');
   actions.className = 'pet-actions';
 
@@ -886,13 +997,55 @@ function createPetCard(id, data, idx){
   actions.appendChild(edit);
   actions.appendChild(del);
 
+  // --- Footer (toggle + actions)
+  const footer = document.createElement('div');
+  footer.className = 'pet-footer';
+  footer.appendChild(privacyWrap);
+  footer.appendChild(actions);
+
+  // --- Assemble
   card.appendChild(photoWrap);
   card.appendChild(name);
-  card.appendChild(actions);
+  card.appendChild(footer);
 
+  // keep the original behavior: clicking the card (not controls) opens edit
   card.addEventListener('click', () => openEditModal(id));
   return card;
 }
+
+
+// ============ Toggle Privacy ============
+document.addEventListener("change", async (e) => {
+  if (e.target.classList.contains("privacyCheckbox")) {
+    const checkbox = e.target;
+    const petId = checkbox.getAttribute("data-pet-id");
+    const isMissing = checkbox.checked;
+
+    if (isMissing) {
+      const confirmMsg = "Reporting your pet as missing will make your pet’s profile and your contact info visible to finders. Continue?";
+      if (!confirm(confirmMsg)) {
+        checkbox.checked = false; // revert
+        return;
+      }
+    }
+
+    try {
+      await db.collection("pets").doc(petId).update({
+        privacy: isMissing ? 1 : 0,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // update the label text
+      const label = checkbox.closest(".privacy-toggle").querySelector(".privacy-label");
+      label.textContent = isMissing ? "Missing" : "Safe";
+
+    } catch (err) {
+      console.error("Failed to update privacy:", err);
+      alert("Error updating privacy status. Please try again.");
+      checkbox.checked = !isMissing; // revert if failed
+    }
+  }
+});
 
 /* =========================
    Add pet (claim) - transaction
@@ -925,6 +1078,7 @@ el('addPetBtn').addEventListener('click', async () => {
 
       tx.update(docRef, {
         ownerID: currentUser.uid,
+        privacy: 0,
         status: 'Owned',
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       });

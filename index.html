@@ -1,0 +1,367 @@
+import React from "react";
+import { motion } from "framer-motion";
+import { PawPrint, ScanLine, ShieldCheck, Phone, Mail, MapPin, ChevronRight, Sparkles, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Head from "next/head";
+
+/**
+ * FurTagPH – Award‑level Landing Page (Homepage with Micro‑interactions + Parallax)
+ * Updated: fixed font imports and image paths.
+ */
+
+const brand = {
+  blue: "#0057B7",
+  orange: "#E94E1B",
+  gray: "#4A4A4A",
+};
+
+const fadeIn = {
+  initial: { opacity: 0, y: 16 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true },
+  transition: { duration: 0.6, ease: "easeOut" },
+};
+
+export default function FurTagPHLanding() {
+  return (
+    <>
+      {/* FONT IMPORTS – use reliable sources */}
+      <Head>
+        {/* Cooper Hewitt via CDNFonts fallback */}
+        <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/cooper-hewitt" />
+
+        {/* Canva Sans replacement fallback – Poppins */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+      </Head>
+
+      <div className="min-h-screen w-full bg-white text-gray-900 [font-family:'Cooper Hewitt',Inter,system-ui,Arial,sans-serif] overflow-x-hidden">
+        {/* FLOATING PAW PRINTS */}
+        <div className="fixed inset-0 -z-10 overflow-hidden">
+          {[...Array(12)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute text-gray-200/40"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{
+                opacity: [0.3, 0.6, 0.3],
+                y: [0, -30, 0],
+                rotate: [0, 15, -15, 0],
+              }}
+              transition={{ duration: 8 + i, repeat: Infinity, delay: i * 0.8 }}
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                fontSize: `${20 + Math.random() * 30}px`,
+              }}
+            >
+              <PawPrint />
+            </motion.div>
+          ))}
+        </div>
+
+        {/* NAV */}
+        <header className="sticky top-0 z-40 backdrop-blur bg-white/70 border-b">
+          <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {/* FIXED: Ensure logo path points to /public folder root */}
+              <img src="/FurtagPH.png" alt="FurTagPH" className="h-10 w-10 rounded-xl ring-1 ring-black/5 object-contain" />
+              <div>
+                <div className="text-xl font-extrabold tracking-tight">FurTagPH</div>
+                <div className="text-xs text-gray-500 [font-family:'Poppins',Inter,system-ui,Arial,sans-serif]">
+                  Where Pet Safety Meets Technology
+                </div>
+              </div>
+            </div>
+            <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+              <a href="#how" className="hover:text-black/80">How it Works</a>
+              <a href="#features" className="hover:text-black/80">Features</a>
+              <a href="#pricing" className="hover:text-black/80">Pricing</a>
+              <a href="#about" className="hover:text-black/80">About</a>
+              <a href="#contact" className="hover:text-black/80">Contact</a>
+            </nav>
+            <div className="flex items-center gap-3">
+              <Button className="hidden sm:inline-flex bg-[#E94E1B] hover:bg-[#cf4519] text-white rounded-xl px-5 py-2 shadow-sm">
+                Order Your Tag
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        {/* HERO */}
+        <section className="relative overflow-hidden">
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#0057B7]/10 via-transparent to-transparent" />
+          <div className="mx-auto max-w-7xl px-6 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
+            <motion.div {...fadeIn}>
+              <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-gray-600">
+                <Sparkles className="h-3.5 w-3.5" /> Trusted QR Pet ID
+              </div>
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="mt-4 text-4xl md:text-6xl font-extrabold leading-tight tracking-tight"
+              >
+                Keep your pet <span className="text-[#0057B7]">safe</span>. Bring them <span className="text-[#E94E1B]">home</span>.
+              </motion.h1>
+              <p className="mt-4 text-lg text-gray-600 max-w-prose">
+                A smart QR tag that connects finders to you in seconds—no app needed. Simple. Reliable. Affordable.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <a href="#pricing">
+                  <Button className="bg-[#E94E1B] hover:bg-[#cf4519] text-white rounded-xl px-6 py-6 text-base">
+                    Order Your Tag <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </a>
+                <a href="#how" className="px-6 py-3 rounded-xl border hover:bg-black/5 transition">See how it works</a>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="relative"
+            >
+              <motion.div
+                initial={{ scale: 1 }}
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 8, repeat: Infinity }}
+                className="relative rounded-3xl overflow-hidden ring-1 ring-black/10 shadow-2xl"
+              >
+                {/* FIXED: Use working stock pet image */}
+                <motion.img
+                  src="https://place-puppy.com/800x600"
+                  alt="Happy dog wearing a tag"
+                  className="h-[440px] w-full object-cover"
+                  initial={{ scale: 1.1, y: 0 }}
+                  whileInView={{ scale: 1, y: -20 }}
+                  viewport={{ once: false, amount: 0.3 }}
+                  transition={{ duration: 1.5, ease: "easeOut" }}
+                />
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ... Rest of the sections remain same ... */}
+      </div>
+    </>
+  );
+}
+
+
+
+      {/* PROBLEM → SOLUTION */}
+      <section className="px-6">
+        <div className="mx-auto max-w-6xl grid md:grid-cols-2 gap-10">
+          <motion.div {...fadeIn} className="rounded-3xl bg-black text-white p-8 md:p-10">
+            <h2 className="text-2xl md:text-3xl font-extrabold">The Problem</h2>
+            <p className="mt-3 text-white/80">
+              Pets can wander. Collars fall off. Phone numbers change. When it matters most, owners and finders need a fast way to connect.
+            </p>
+            <ul className="mt-6 space-y-3 text-white/90">
+              {[
+                "Lost & found is often slow and stressful",
+                "Most solutions are pricey or inconvenient",
+                "Owners want peace of mind—always",
+              ].map((t, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-1 h-5 w-5 text-[#E94E1B]" /> {t}
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+
+          <motion.div {...fadeIn} className="rounded-3xl bg-[#0057B7] text-white p-8 md:p-10">
+            <h2 className="text-2xl md:text-3xl font-extrabold">Our Solution</h2>
+            <p className="mt-3 text-white/90">
+              FurTagPH is a smart QR tag linked to your pet’s secure online profile. Anyone can scan, see key info, and contact you instantly.
+            </p>
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { icon: <PawPrint className="h-5 w-5" />, title: "Smart Tag" },
+                { icon: <ScanLine className="h-5 w-5" />, title: "Quick Scan" },
+                { icon: <ShieldCheck className="h-5 w-5" />, title: "Instant Alert" },
+              ].map((f, i) => (
+                <div key={i} className="rounded-2xl bg-white/10 p-4 backdrop-blur border border-white/20">
+                  <div className="flex items-center gap-2 font-medium">{f.icon} {f.title}</div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section id="how" className="mx-auto max-w-7xl px-6 py-20">
+        <motion.h2 {...fadeIn} className="text-3xl md:text-4xl font-extrabold text-center">
+          How it works
+        </motion.h2>
+        <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { step: "1", title: "Buy a Tag", desc: "Order your official FurTagPH tag.", icon: PawPrint },
+            { step: "2", title: "Register Pet", desc: "Create your pet profile in minutes.", icon: ShieldCheck },
+            { step: "3", title: "Attach Tag", desc: "Clip it on your pet’s collar.", icon: CheckCircle2 },
+            { step: "4", title: "Scan & Reunite", desc: "Finders scan and contact you instantly.", icon: ScanLine },
+          ].map((card, i) => (
+            <motion.div key={card.step} {...fadeIn} transition={{ delay: i * 0.05 }}
+              className="rounded-3xl border bg-white p-6 shadow-sm hover:shadow-md">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-medium text-gray-500">Step {card.step}</div>
+                <card.icon className="h-6 w-6 text-[#0057B7]" />
+              </div>
+              <h3 className="mt-3 text-xl font-semibold">{card.title}</h3>
+              <p className="mt-2 text-gray-600">{card.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section id="features" className="bg-neutral-50 border-t border-b">
+        <div className="mx-auto max-w-7xl px-6 py-16">
+          <motion.h2 {...fadeIn} className="text-3xl md:text-4xl font-extrabold text-center">
+            Everything you need
+          </motion.h2>
+          <div className="mt-10 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                title: "Pet Profiles",
+                text: "Keep name, photo, birthday, food, allergies & notes in one place.",
+                icon: PawPrint,
+              },
+              {
+                title: "Owner Details",
+                text: "Secure contact info so finders can reach you fast.",
+                icon: Phone,
+              },
+              {
+                title: "Instant Alerts",
+                text: "Get notified when your pet’s tag is scanned.",
+                icon: Mail,
+              },
+              {
+                title: "Works Anywhere",
+                text: "Any smartphone camera. No app needed.",
+                icon: MapPin,
+              },
+            ].map((f, i) => (
+              <motion.div key={i} {...fadeIn} transition={{ delay: i * 0.05 }} className="rounded-3xl bg-white p-6 border shadow-sm">
+                <f.icon className="h-6 w-6 text-[#0057B7]" />
+                <h3 className="mt-3 text-lg font-semibold">{f.title}</h3>
+                <p className="mt-1 text-gray-600">{f.text}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING / CTA */}
+      <section id="pricing" className="mx-auto max-w-7xl px-6 py-16">
+        <div className="rounded-3xl bg-gradient-to-br from-[#0057B7] to-[#003e81] text-white p-10 md:p-14 shadow-xl">
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-extrabold">Only ₱250 per tag</h2>
+              <p className="mt-3 text-white/90">Get peace of mind for less than a cup of coffee per month.</p>
+              <ul className="mt-6 space-y-2 text-white/90">
+                {[
+                  "Official QR tag with unique code",
+                  "Online pet profile & contact page",
+                  "Works on any smartphone camera",
+                ].map((b, i) => (
+                  <li key={i} className="flex gap-2 items-start">
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#E94E1B]" /> {b}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button className="bg-[#E94E1B] hover:bg-[#cf4519] text-white rounded-xl px-6 py-6 text-base">Order Now</Button>
+                <a href="#contact" className="px-6 py-3 rounded-xl border border-white/30 hover:bg-white/10">Talk to us</a>
+              </div>
+            </div>
+            <div className="rounded-2xl overflow-hidden ring-1 ring-white/20">
+              <img src="https://images.unsplash.com/photo-1558944351-4d7a2a2b3c56?q=80&w=1600&auto=format&fit=crop" alt="FurTagPH product" className="h-full w-full object-cover" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ABOUT */}
+      <section id="about" className="bg-neutral-50 border-t border-b">
+        <div className="mx-auto max-w-7xl px-6 py-16 grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-extrabold">Mission & Vision</h2>
+            <p className="mt-4 text-gray-600">
+              Our mission is to keep pets safe and give owners peace of mind by connecting lost pets with their families
+              through smart, affordable, and reliable QR technology. Our vision is to ensure every pet has a digital safety net.
+            </p>
+          </div>
+          <div className="rounded-3xl bg-white p-6 border shadow-sm">
+            <h3 className="text-lg font-semibold">What we believe</h3>
+            <ul className="mt-3 space-y-2 text-gray-600">
+              {[
+                "Compassion for pets & owners",
+                "Trust through simple, dependable tools",
+                "Accessibility for every family",
+                "Innovation that serves real life",
+                "Community that brings pets home",
+              ].map((v, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#0057B7]" /> {v}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* CONTACT */}
+      <section id="contact" className="mx-auto max-w-7xl px-6 py-16">
+        <div className="rounded-3xl border p-8 md:p-12 grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-extrabold">Get in touch</h2>
+            <p className="mt-3 text-gray-600">Questions about orders, partnerships, or bulk tags? We’d love to help.</p>
+            <div className="mt-6 grid sm:grid-cols-3 gap-4 text-sm">
+              <a href="mailto:hello@furtag.ph" className="flex items-center gap-2 rounded-xl border p-3 hover:bg-black/5">
+                <Mail className="h-4 w-4" /> hello@furtag.ph
+              </a>
+              <a href="tel:+639000000000" className="flex items-center gap-2 rounded-xl border p-3 hover:bg-black/5">
+                <Phone className="h-4 w-4" /> +63 900 000 0000
+              </a>
+              <div className="flex items-center gap-2 rounded-xl border p-3">
+                <MapPin className="h-4 w-4" /> Manila, PH
+              </div>
+            </div>
+          </div>
+          <form className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <input className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-[#0057B7]" placeholder="Your name" />
+              <input className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-[#0057B7]" placeholder="Email address" />
+            </div>
+            <input className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-[#0057B7]" placeholder="Subject" />
+            <textarea rows={4} className="w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-[#0057B7]" placeholder="Message" />
+            <Button type="button" className="bg-[#0057B7] hover:bg-[#004da2] text-white rounded-xl px-6 py-6 text-base">Send message</Button>
+            {/* TODO: wire up to EmailJS or Firebase Function */}
+          </form>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="border-t">
+        <div className="mx-auto max-w-7xl px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <img src="/FurtagPH.png" alt="FurTagPH" className="h-8 w-8 rounded-lg ring-1 ring-black/5 object-contain" />
+            <div>
+              <div className="text-sm font-semibold">FurTagPH</div>
+              <div className="text-xs text-gray-500 [font-family:'Canva_Sans',Inter,system-ui,Arial,sans-serif]">Where Pet Safety Meets Technology</div>
+            </div>
+          </div>
+          <div className="text-xs text-gray-500">© {new Date().getFullYear()} FurTagPH. All rights reserved.</div>
+        </div>
+      </footer>
+    </div>
+  );
+}

@@ -18,6 +18,27 @@
     .badge { @apply inline-block px-3 py-1 text-sm rounded-full font-medium; }
     .soft-card { background: #fbfbfb; border-radius: 14px; box-shadow: 0 6px 18px rgba(13, 12, 11, 0.06); }
     .header-img { height: 56vw; max-height: 240px; object-fit: cover; width: 100%; }
+#error-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  text-align: center;
+  max-width: 90%;
+  z-index: 9999;
+  /* 🚫 remove display:none here */
+}
+
+#error-card h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+  color: #e53e3e; /* red */
+}
+
   </style>
 </head>
 <body class="bg-gradient-to-b from-orange-50 via-white to-orange-50 min-h-screen flex items-center justify-center p-4">
@@ -96,14 +117,54 @@
   </button>
 </div>
 
-<div id="error-card" class="max-w-md mx-auto mt-6 hidden">
-  <div class="bg-white rounded-2xl p-6 shadow-lg text-center">
-    <div class="text-red-500 text-4xl mb-3">⚠️</div>
-    <h3 class="text-lg font-semibold mb-2">Profile not found</h3>
-    <p class="text-sm text-gray-600 mb-4">We couldn't find this pet or owner. The link may be invalid or removed.</p>
-    <a href="/" class="inline-block bg-orange-500 text-white px-4 py-2 rounded-lg">Back to home</a>
+<div id="card-wrapper" class="fixed inset-0 flex items-center justify-center bg-gray-50">
+  <div id="error-card" class="max-w-md w-full hidden">
+    <div class="bg-white rounded-2xl p-6 shadow-lg text-center">
+      <div class="text-red-500 text-4xl mb-3">⚠️</div>
+      <h3 class="text-lg font-semibold mb-2">Profile not found</h3>
+      <p class="text-sm text-gray-600 mb-4">We couldn't find this pet or owner. The link may be invalid or removed.</p>
+      <a href="/" class="inline-block bg-orange-500 text-white px-4 py-2 rounded-lg">Back to home</a>
+    </div>
+  </div>
+
+  <div id="privacy-card" class="max-w-md w-full hidden">
+    <div class="bg-white rounded-2xl p-6 shadow-lg text-center">
+      <div class="text-yellow-500 text-4xl mb-3">🔒</div>
+      <h3 class="text-lg font-semibold mb-2">Pet is Safe</h3>
+      <p class="text-sm text-gray-600 mb-4">
+        This pet is currently <span class="font-semibold">not tagged as missing</span>.  
+        For security, the pet’s identity and the owner’s details are hidden.  
+      </p>
+      <p class="text-sm text-gray-600 mb-4">
+        If you are the owner and your pet is missing, please mark your pet as missing on Furboard.
+      </p>
+      <a href="https://furtagph.com/furboard.html" 
+         class="inline-block bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg shadow transition">
+         Go to Furboard
+      </a>
+    </div>
+  </div>
+
+  <div id="unlinked-card" class="max-w-md w-full hidden">
+    <div class="bg-white rounded-2xl p-6 shadow-lg text-center">
+      <div class="text-blue-500 text-4xl mb-3">ℹ️</div>
+      <h3 class="text-lg font-semibold mb-2">FurTag Not Linked</h3>
+      <p class="text-sm text-gray-600 mb-4">
+        This FurTag is not yet linked to any account.  
+      </p>
+      <p class="text-sm text-gray-600 mb-4">
+        If you don’t have an account, create one now to manage your pets.  
+        If you already have an account, add your pet on your Furboard.
+      </p>
+      <a href="https://furtagph.com/furboard.html" 
+         class="inline-block bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg shadow transition">
+         Go to Furboard
+      </a>
+    </div>
   </div>
 </div>
+
+
 
 <script type="module">
 /* --- EmailJS (ESM) --- */
@@ -219,72 +280,118 @@ const ownerLocationBtn = document.getElementById('owner-location');
 petPhoto.onerror = ()=>petPhoto.src=DEFAULT_PET_IMG;
 petAvatar.onerror = ()=>petAvatar.src=DEFAULT_PET_IMG;
 
-(async function load(){
-  try{
-    const petSnap = await getDoc(doc(db,'pets',petId));
-    if(!petSnap.exists()){ showError(); return; }
+(async function load() {
+  try {
+    const petSnap = await getDoc(doc(db, 'pets', petId));
+    if (!petSnap.exists()) { showError(); return; }
     const pet = petSnap.data();
 
-    petPhoto.src = pet.photo||DEFAULT_PET_IMG;
-    petAvatar.src = pet.photo||DEFAULT_PET_IMG;
-    petNameEl.textContent = pet.name||'Unnamed';
+    // ✅ fixed: match actual HTML id
+    const mainCard     = document.getElementById('card');  
+    const privacyCard  = document.getElementById('privacy-card');
+    const unlinkedCard = document.getElementById('unlinked-card');
 
-    const breedText = pet.breed||'';
-    const colorText = pet.color||'';
-    petSubEl.textContent = breedText && colorText ? `${breedText} • ${colorText}` : breedText||colorText||'';
+    // --- Reset all cards first ---
+    mainCard?.classList.add('hidden');
+    privacyCard?.classList.add('hidden');
+    unlinkedCard?.classList.add('hidden');
 
-    const dobValue = pet.DOB||pet.dob||'';
-    petDobEl.textContent = dobValue||'—';
-    petAgeEl.textContent = dobValue?ageFromDOB(dobValue):'';
+    // --- PRIVACY CHECK ---
+    if (pet.privacy === 0) {
+      // Pet is not missing → show privacy notice
+      privacyCard.classList.remove('hidden');
+      clearSkeletons();
+      return;
+    }
 
-    petFoodEl.textContent = pet.food||'—';
-    petAllergiesEl.textContent = pet.allergies||'—';
-    petMedicalEl.textContent = pet.medicalCondition||'—';
+    if (pet.privacy === undefined) {
+      // No privacy field → tag not linked
+      unlinkedCard.classList.remove('hidden');
+      clearSkeletons();
+      return;
+    }
 
-    badgesWrap.innerHTML='';
-    if(breedText) badgesWrap.appendChild(makeBadge(breedText,'neutral'));
-    if(colorText) badgesWrap.appendChild(makeBadge(colorText,'info'));
-    if(pet.allergies) badgesWrap.appendChild(makeBadge(pet.allergies.toLowerCase()==='none'?'neutral':'alert'));
-    if(pet.medicalCondition) badgesWrap.appendChild(makeBadge(pet.medicalCondition.toLowerCase()==='healthy'?'neutral':'alert'));
+    // --- PRIVACY = 1 → show full profile ---
+    mainCard?.classList.remove('hidden');
 
-    if(!pet.ownerID){ document.getElementById('owner-section').remove(); clearSkeletons(); return; }
+    // --- Existing rendering logic ---
+    petPhoto.src = pet.photo || DEFAULT_PET_IMG;
+    petAvatar.src = pet.photo || DEFAULT_PET_IMG;
+    petNameEl.textContent = pet.name || 'Unnamed';
 
-    const ownerSnap = await getDoc(doc(db,'users',pet.ownerID));
-    if(!ownerSnap.exists()){ ownerNameEl.textContent='Owner not found'; ownerAddress.innerHTML='<div class="text-gray-400">No address provided</div>'; clearSkeletons(); return; }
+    const breedText = pet.breed || '';
+    const colorText = pet.color || '';
+    petSubEl.textContent = breedText && colorText ? `${breedText} • ${colorText}` : breedText || colorText || '';
+
+    const dobValue = pet.DOB || pet.dob || '';
+    petDobEl.textContent = dobValue || '—';
+    petAgeEl.textContent = dobValue ? ageFromDOB(dobValue) : '';
+
+    petFoodEl.textContent = pet.food || '—';
+    petAllergiesEl.textContent = pet.allergies || '—';
+    petMedicalEl.textContent = pet.medicalCondition || '—';
+
+    badgesWrap.innerHTML = '';
+    if (breedText) badgesWrap.appendChild(makeBadge(breedText, 'neutral'));
+    if (colorText) badgesWrap.appendChild(makeBadge(colorText, 'info'));
+    if (pet.allergies) badgesWrap.appendChild(makeBadge(pet.allergies.toLowerCase() === 'none' ? 'neutral' : 'alert'));
+    if (pet.medicalCondition) badgesWrap.appendChild(makeBadge(pet.medicalCondition.toLowerCase() === 'healthy' ? 'neutral' : 'alert'));
+
+    if (!pet.ownerID) {
+      document.getElementById('owner-section').remove();
+      clearSkeletons();
+      return;
+    }
+
+    const ownerSnap = await getDoc(doc(db, 'users', pet.ownerID));
+    if (!ownerSnap.exists()) {
+      ownerNameEl.textContent = 'Owner not found';
+      ownerAddress.innerHTML = '<div class="text-gray-400">No address provided</div>';
+      clearSkeletons();
+      return;
+    }
 
     const owner = ownerSnap.data();
-    ownerNameEl.textContent = owner.fullName||'—';
-    ownerAvatarEl.textContent = initials(owner.fullName||'');
+    ownerNameEl.textContent = owner.fullName || '—';
+    ownerAvatarEl.textContent = initials(owner.fullName || '');
     ownerAvatarEl.classList.remove('skeleton');
 
     setContactIcon(ownerInstagram, owner.instagramLink);
     setContactIcon(ownerFacebook, owner.facebookLink);
-    setContactIcon(ownerEmail, owner.emailAddress?`mailto:${owner.emailAddress}`:'');
-    setContactIcon(ownerPhone, owner.phoneNumber?`tel:${owner.phoneNumber}`:'');
+    setContactIcon(ownerEmail, owner.emailAddress ? `mailto:${owner.emailAddress}` : '');
+    setContactIcon(ownerPhone, owner.phoneNumber ? `tel:${owner.phoneNumber}` : '');
 
-    const addr = owner.address||{};
+    const addr = owner.address || {};
     const addrLines = [];
-    if(addr.street) addrLines.push(addr.street);
-    let cityLine='';
-    if(addr.city) cityLine+=addr.city;
-    if(addr.province) cityLine+=(cityLine?', ':'')+addr.province;
-    if(addr.zipcode) cityLine+=(cityLine?' ':'')+addr.zipcode;
-    if(cityLine) addrLines.push(cityLine);
-    if(addr.country) addrLines.push(addr.country);
-    ownerAddress.innerHTML = addrLines.length? addrLines.map(l=>`<div>${escapeHtml(l)}</div>`).join(''):'<span class="text-gray-400 italic">No address provided</span>';
+    if (addr.street) addrLines.push(addr.street);
+    let cityLine = '';
+    if (addr.city) cityLine += addr.city;
+    if (addr.province) cityLine += (cityLine ? ', ' : '') + addr.province;
+    if (addr.zipcode) cityLine += (cityLine ? ' ' : '') + addr.zipcode;
+    if (cityLine) addrLines.push(cityLine);
+    if (addr.country) addrLines.push(addr.country);
+    ownerAddress.innerHTML = addrLines.length
+      ? addrLines.map(l => `<div>${escapeHtml(l)}</div>`).join('')
+      : '<span class="text-gray-400 italic">No address provided</span>';
 
-    if(owner.location?.lat && owner.location?.lng){ ownerLocationBtn.href=`https://www.google.com/maps?q=${owner.location.lat},${owner.location.lng}`; ownerLocationBtn.classList.remove('hidden'); }
+    if (owner.location?.lat && owner.location?.lng) {
+      ownerLocationBtn.href = `https://www.google.com/maps?q=${owner.location.lat},${owner.location.lng}`;
+      ownerLocationBtn.classList.remove('hidden');
+    }
 
     clearSkeletons();
 
-  }catch(err){ console.error('load error',err); showError(); }
-
-  document.getElementById('test-email-btn').click();
+  } catch (err) {
+    console.error('load error', err);
+    showError();
+  }
 })();
+
 
 // IMPORTANT: Remove the sendEmail function from here, module will use the global one
 // Notification function now uses global sendEmail
 // In notifyOwner, just call the module function:
+// 📩 Notify owner when FurTag is scanned
 (async function notifyOwner() {
   try {
     // 1️⃣ Get the pet document
@@ -292,7 +399,13 @@ petAvatar.onerror = ()=>petAvatar.src=DEFAULT_PET_IMG;
     if (!petSnap.exists()) return;
 
     const pet = petSnap.data();
-    if (!pet.ownerID) return; // ownerID references the user
+    if (!pet.ownerID) return; // Skip if no owner linked
+
+    // 🚫 Do not send if privacy is 0 (not missing) or undefined (unlinked)
+    if (pet.privacy === 0 || pet.privacy === undefined) {
+      console.log("⏹️ Notification skipped: pet not missing or not linked.");
+      return;
+    }
 
     // 2️⃣ Throttle notifications per pet (30 min)
     const key = `scanNotify:${petId}`;
@@ -312,7 +425,7 @@ petAvatar.onerror = ()=>petAvatar.src=DEFAULT_PET_IMG;
 
     const owner = ownerSnap.data();
     if (!owner.emailAddress) {
-      console.warn('Owner has no email address');
+      console.warn('Owner has no email address, skipping notification');
       return;
     }
 
@@ -336,18 +449,23 @@ petAvatar.onerror = ()=>petAvatar.src=DEFAULT_PET_IMG;
       });
     }
 
-    // 5️⃣ Prepare variables for EmailJS template
+    // 5️⃣ Prepare variables for EmailJS (or global email service)
     const ownerName = owner.fullName || 'Pet Owner';
     const petName = pet.name || 'Your Pet';
 
-    console.log(`Sending email to ${owner.emailAddress} with scanner location ${lat},${lng}...`);
+    if (typeof sendEmail !== "function") {
+      console.error("sendEmail function is not defined globally!");
+      return;
+    }
+
+    console.log(`📧 Sending email to ${owner.emailAddress} (Pet: ${petName}) with scanner location: ${lat},${lng}`);
 
     // 6️⃣ Send email
     await sendEmail(owner.emailAddress, ownerName, petName, lat, lng);
-    console.log('Email sent successfully');
+    console.log('✅ Email sent successfully');
 
   } catch (err) {
-    console.error("notifyOwner error", err);
+    console.error("notifyOwner error:", err);
   }
 })();
 
