@@ -1077,7 +1077,7 @@ el('addPetBtn').addEventListener('click', async () => {
       }
 
       tx.update(docRef, {
-        ownerID: currentUser.uid,
+        ownerId: currentUser.uid,
         privacy: 0,
         status: 'Owned',
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
