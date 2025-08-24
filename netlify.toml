@@ -1,3 +1,9 @@
 [build]
   functions = "netlify/functions"
   node_version = "20"
+
+[[redirects]]
+  from = "https://furtagph.netlify.app/*"
+  to = "https://furtagph.com/:splat"
+  status = 301
+  force = true
