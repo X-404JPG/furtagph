@@ -419,22 +419,32 @@ document.getElementById('emergency-btn').addEventListener('click', async () => {
           resolve();
         },
         (err) => {
-          console.warn("Location not available, falling back to generic search", err);
+          console.warn("Location not available, falling back", err);
           resolve();
         },
-        { enableHighAccuracy: true, timeout: 10000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     });
   }
 
+  let url = '';
   if (lat && lng) {
-    // Open map centered at scanner location
-    window.open(`https://www.google.com/maps/search/vet+clinic/@${lat},${lng},15z`, '_blank');
+    // Use Google Maps deep link
+    url = `https://www.google.com/maps/search/?api=1&query=vet+clinic&query=${lat},${lng}`;
   } else {
-    // Fallback generic search
-    window.open('https://www.google.com/maps/search/vet+clinic+near+me/', '_blank');
+    url = `https://www.google.com/maps/search/?api=1&query=vet+clinic+near+me`;
+  }
+
+  // Try to open in Apple Maps if iOS
+  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    window.location.href = `maps://?q=vet+clinic${lat && lng ? `&sll=${lat},${lng}` : ''}`;
+    setTimeout(() => { window.location.href = url; }, 500); // fallback to Google Maps
+  } else {
+    // Android & Desktop → open Google Maps
+    window.location.href = url;
   }
 });
+
 
 </script>
 
