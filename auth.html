@@ -9,6 +9,16 @@
 <title>FurTagPH — Auth</title>
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 
+<!-- iOS PWA support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FurTagPH">
+
+<!-- iOS App Icons -->
+<link rel="apple-touch-icon" href="furtagph-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="furtagph-512.png">
+
+
 <!-- Swiper -->
 <link rel="stylesheet" href="https://unpkg.com/swiper@9/swiper-bundle.min.css" />
 <script src="https://unpkg.com/swiper@9/swiper-bundle.min.js"></script>
@@ -225,6 +235,15 @@
     </div><!-- end swiper -->
   </div><!-- end card -->
 </div><!-- end app -->
+
+<div id="iosInstallPrompt" style="display:none; 
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: #fff; color: #333; padding: 14px 18px;
+  border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+  font-size: 15px; font-weight: 500; z-index: 9999; max-width: 320px; text-align: center;">
+  📲 To install FurTagPH, tap <strong>Share</strong> <span style="font-size:18px">⬆️</span> then <strong>Add to Home Screen</strong>
+</div>
+
 
 <script>
 /* ========== FIREBASE ========== */
@@ -457,38 +476,60 @@ if  ('serviceWorker' in navigator) {
 
 let deferredPrompt;
 
-// Listen for the browser’s install prompt event
 window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();      // Prevent the default mini-banner
-  deferredPrompt = e;      // Save the event for later use
+  e.preventDefault();
+  deferredPrompt = e;
 
-  // Create the install button
+  // Create styled install button
   const btn = document.createElement('button');
   btn.textContent = 'Install FurTagPH';
-  btn.style.padding = '12px 20px';
-  btn.style.border = 'none';
-  btn.style.borderRadius = '10px';
-  btn.style.background = 'linear-gradient(90deg,#ff6f61,#ff896f)';
-  btn.style.color = '#fff';
-  btn.style.fontSize = '16px';
-  btn.style.fontWeight = '600';
-  btn.style.cursor = 'pointer';
-  btn.style.boxShadow = '0 6px 18px rgba(0,0,0,0.1)';
+  Object.assign(btn.style, {
+    padding: '12px 20px',
+    border: 'none',
+    borderRadius: '10px',
+    background: 'linear-gradient(90deg,#ff6f61,#ff896f)',
+    color: '#fff',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    boxShadow: '0 6px 18px rgba(0,0,0,0.1)',
+    opacity: '0',
+    transition: 'opacity 0.3s ease-in-out'
+  });
 
-  // Append the button to the container
   const container = document.getElementById('installContainer');
-  container.appendChild(btn);
+  if (container) {
+    container.appendChild(btn);
+    requestAnimationFrame(() => { btn.style.opacity = '1'; });
+  }
 
-  // When user clicks, show the browser install prompt
   btn.addEventListener('click', async () => {
-    btn.disabled = true;  // prevent multiple clicks
+    btn.disabled = true;
     deferredPrompt.prompt();
     const choiceResult = await deferredPrompt.userChoice;
     console.log('User choice:', choiceResult.outcome);
     deferredPrompt = null;
-    btn.remove();          // remove button after installation prompt
+    btn.remove();
   });
 });
+
+// iOS fallback
+if (isIos() && !isInStandaloneMode()) {
+  const iosPrompt = document.getElementById('iosInstallPrompt');
+  if (iosPrompt) {
+    iosPrompt.style.display = 'block';
+  }
+}
+
+
+function isIos() {
+  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+}
+function isInStandaloneMode() {
+  return ('standalone' in window.navigator) && window.navigator.standalone;
+}
+
+
 
 
 /* NOTE: If you open the file via file:// you may see origin warnings.
