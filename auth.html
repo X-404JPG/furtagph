@@ -40,8 +40,25 @@
   html,body{height:100%;margin:0;background:var(--bg);font-family:Inter,system-ui,Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased; -webkit-touch-callout:none;}
 
   /* intro full-screen mp4 */
-  .intro { position:fixed; inset:0; z-index:1200; display:flex; align-items:center; justify-content:center; background:black; transition:opacity .6s ease, visibility .6s; visibility:visible; opacity:1; }
-  .intro.hidden { opacity:0; visibility:hidden; pointer-events:none; }
+/* intro full-screen mp4 */
+.intro { 
+  position:fixed; 
+  inset:0; 
+  z-index:1200; 
+  display:flex; 
+  align-items:center; 
+  justify-content:center; 
+  background:black; 
+  transition:opacity .6s ease, visibility .6s; 
+  visibility:visible; 
+  opacity:1; 
+  pointer-events: auto;   /* block clicks under video */
+}
+.intro.hidden { 
+  opacity:0; 
+  visibility:hidden; 
+  pointer-events:none;   /* allow interaction after fade */
+}
   .intro video { width:100%; height:100%; object-fit:cover; }
 
   /* app container */
@@ -131,8 +148,15 @@
             <label for="loginEmail">Email</label>
             <input id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com">
 
-            <label for="loginPassword">Password</label>
-            <input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••">
+<label for="loginPassword">Password</label>
+<div style="position:relative;">
+  <input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••" style="padding-right:40px;">
+  <button type="button" onclick="togglePassword('loginPassword', this)" 
+    style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:14px; color:#666;">
+    👁️
+  </button>
+</div>
+
 
             <div style="margin-top:14px">
               <button id="loginBtn" class="btn" type="button">Sign in</button>
@@ -190,16 +214,30 @@
             <input id="lat" type="hidden">
             <input id="lng" type="hidden">
 
-            <div class="row" style="margin-top:10px">
-              <div class="col">
-                <label>Password</label>
-                <input id="password" type="password" placeholder="Create password" autocomplete="new-password">
-              </div>
-              <div class="col">
-                <label>Confirm Password</label>
-                <input id="password2" type="password" placeholder="Confirm password" autocomplete="new-password">
-              </div>
-            </div>
+<div class="row" style="margin-top:10px">
+  <div class="col">
+    <label>Password</label>
+    <div style="position:relative;">
+      <input id="password" type="password" placeholder="Create password" autocomplete="new-password" style="padding-right:40px;">
+      <button type="button" onclick="togglePassword('password', this)" 
+        style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:14px; color:#666;">
+        👁️
+      </button>
+    </div>
+  </div>
+
+  <div class="col">
+    <label>Confirm Password</label>
+    <div style="position:relative;">
+      <input id="password2" type="password" placeholder="Confirm password" autocomplete="new-password" style="padding-right:40px;">
+      <button type="button" onclick="togglePassword('password2', this)" 
+        style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:14px; color:#666;">
+        👁️
+      </button>
+    </div>
+  </div>
+</div>
+
 
             <div style="margin-top:12px; display:flex; gap:8px;">
               <button id="signupBtn" class="btn" type="button">Create account</button>
@@ -259,6 +297,23 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// 🔒 Keep users logged in after closing/reloading
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+  .then(() => {
+    console.log("Auth persistence set to LOCAL (keeps user logged in)");
+  })
+  .catch((error) => {
+    console.error("Error setting auth persistence:", error);
+  });
+
+// Optional: auto-redirect if already logged in
+auth.onAuthStateChanged(user => {
+  if (user) {
+    console.log("User already logged in:", user.email);
+    window.location.href = 'furboard.html';
+  }
+});
 
 /* ========== INTRO (mp4) ------------- */
 const introEl = document.getElementById('intro');
@@ -538,6 +593,16 @@ function isInStandaloneMode() {
   return ('standalone' in window.navigator) && window.navigator.standalone;
 }
 
+function togglePassword(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (input.type === "password") {
+    input.type = "text";
+    btn.textContent = "🙈"; // change icon
+  } else {
+    input.type = "password";
+    btn.textContent = "👁️"; // change icon back
+  }
+}
 
 
 
