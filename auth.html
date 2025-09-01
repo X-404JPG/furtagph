@@ -138,7 +138,7 @@
 <div id="installContainer" style="position:fixed;bottom:20px;right:20px;z-index:1000;"></div>
 
 <!-- Fullscreen MP4 intro -->
-<div id="intro" class="intro" role="img" aria-label="Intro">
+<div id="intro" class="intro" role="img" aria-label="Intro" inert>
   <video id="introVideo" autoplay muted playsinline webkit-playsinline>
     <source src="FurtagPH.mp4" type="video/mp4">
   </video>
@@ -339,13 +339,14 @@ introVideo.addEventListener('ended', () => fadeIntro());
 function fadeIntro(){
   if(!introEl.classList.contains('hidden')){
     introEl.classList.add('hidden');
-    // after intro fades, ensure swiper/map sizing runs
+    introEl.removeAttribute("inert"); // ✅ allow interaction again
     setTimeout(()=> {
       try { if(swiper) { swiper.update(); swiper.allowTouchMove = true; } } catch(e){}
       maybeInitMap();
     }, 320);
   }
 }
+
 
 /* ========== SWIPER ========== */
 let swiper = null;
