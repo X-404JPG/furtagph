@@ -225,33 +225,46 @@ petAvatar.onerror = ()=>petAvatar.src=DEFAULT_PET_IMG;
 // 🔔 Only send notification for missing pets (privacy === 1)
 async function notifyOwnerIfMissing(pet) {
   try {
-    if (!pet || pet.privacy !== 1) {
-      console.log('Privacy not missing — skip email.');
+    if (!pet) {
+      console.log('❌ No pet data, skipping email.');
       return;
     }
-    if (!pet.ownerId) return;
+    if (pet.privacy !== 1) {
+      console.log(`ℹ️ Pet privacy = ${pet.privacy}, not "missing" → email not sent.`);
+      return;
+    }
+    if (!pet.ownerId) {
+      console.log('❌ Pet has no ownerId, cannot send email.');
+      return;
+    }
 
     // throttle 30 mins per pet
     const key = `scanNotify:${petId}`;
     const now = Date.now();
     const last = localStorage.getItem(key);
     if (last && now - Number(last) < 30 * 60 * 1000) {
-      console.log('Throttled — last email was sent recently.');
+      console.log('⏱️ Throttled — last email was sent recently. No email sent.');
       return;
     }
     localStorage.setItem(key, String(now));
 
     const ownerSnap = await getDoc(doc(db, 'users', pet.ownerId));
-    if (!ownerSnap.exists()) return;
+    if (!ownerSnap.exists()) {
+      console.log('❌ Owner not found in database, no email sent.');
+      return;
+    }
     const owner = ownerSnap.data();
-    if (!owner.emailAddress) return;
+    if (!owner.emailAddress) {
+      console.log('❌ Owner email missing, cannot send.');
+      return;
+    }
 
     let lat = '', lng = '';
     if (navigator.geolocation) {
       await new Promise((resolve) => {
         navigator.geolocation.getCurrentPosition(
           (pos) => { lat = pos.coords.latitude; lng = pos.coords.longitude; resolve(); },
-          () => resolve(),
+          (err) => { console.warn("⚠️ Location not available, continuing without it", err); resolve(); },
           { enableHighAccuracy: true, timeout: 10000 }
         );
       });
@@ -259,13 +272,14 @@ async function notifyOwnerIfMissing(pet) {
 
     const ownerName = owner.fullName || 'Pet Owner';
     const petName = pet.name || 'Your Pet';
-    console.log(`Sending email to ${owner.emailAddress} with scanner location ${lat},${lng}...`);
+    console.log(`📧 Attempting to send email to ${owner.emailAddress} with location: ${lat},${lng}`);
     await sendEmail(owner.emailAddress, ownerName, petName, lat, lng);
-    console.log('Email sent successfully');
+    console.log('✅ Email sent successfully');
   } catch (err) {
-    console.error("notifyOwnerIfMissing error", err);
+    console.error("🚨 notifyOwnerIfMissing error:", err);
   }
 }
+
 
 (async function load(){
   try{

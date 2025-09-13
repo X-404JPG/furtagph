@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FurTag Quick Start Guide</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    :root {
+      --brand-1: #ff6f61; /* Primary */
+      --brand-2: #ff896f; /* Secondary */
+    }
+
+    .brand-bg {
+      background-color: var(--brand-1) !important;
+    }
+    .brand-gradient {
+      background: linear-gradient(90deg, var(--brand-1), var(--brand-2)) !important;
+    }
+    .brand-ring {
+      box-shadow: 0 0 0 4px rgba(255, 111, 97, 0.35) !important;
+    }
+    .brand-hover:hover {
+      background-color: var(--brand-2) !important;
+    }
+    .brand-progress {
+      background: linear-gradient(90deg, var(--brand-1), var(--brand-2)) !important;
+      transition: width 0.4s ease-in-out;
+    }
+    .animate-step {
+      animation: stepFadeSlide 0.4s ease-out;
+    }
+    @keyframes stepFadeSlide {
+      from { opacity: 0; transform: translateY(15px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+  </style>
+</head>
+<body class="bg-white text-gray-800 flex flex-col items-center justify-center min-h-screen">
+
+<div id="app" class="w-full max-w-md p-4 pb-24"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCARXD0ZyOfgyrvsY9KiVXs4VwloiumiHE",
+    authDomain: "furtagph-cf3d3.firebaseapp.com",
+    projectId: "furtagph-cf3d3",
+    storageBucket: "furtagph-cf3d3.firebasestorage.app",
+    messagingSenderId: "639123411408",
+    appId: "1:639123411408:web:737d4aa4a54b414dcda9d5",
+    measurementId: "G-GHPYPB8XW8"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const petId = urlParams.get("id");
+  let petPassword = "";
+  let steps = [];
+  let currentStep = 0;
+  let maxStepReached = 0;
+
+  async function loadPetData() {
+    if (!petId) return alert("Pet ID missing");
+    const petRef = doc(db, "pets", petId);
+    const petSnap = await getDoc(petRef);
+    if (petSnap.exists()) {
+      petPassword = petSnap.data().password;
+
+      steps = [
+        {
+          title: "Welcome to FurTag",
+          content: `
+            <p class="text-lg text-center mb-4">Your ultimate pet safety companion!</p>
+            <ul class="space-y-2 text-left text-sm">
+              <li>🐾 Water-resistant, lightweight, 304 stainless steel</li>
+              <li>⚡ No charging required, no hidden fees</li>
+              <li>🎁 Free lifetime subscription</li>
+              <li>📞 Direct Call Button</li>
+              <li>📍 Google Maps Owner Locator</li>
+              <li>🏥 Vet Clinic Locator</li>
+              <li>🛰️ Real-time GPS when scanned</li>
+              <li>📑 Pet Medical Records</li>
+              <li>🖊️ Update profile anytime</li>
+              <li>🐶 Manage multiple pets</li>
+              <li>🔒 Privacy protected</li>
+            </ul>
+          `
+        },
+        {
+          title: "Sign Up",
+          content: `
+            <p class="mb-2 text-sm">Complete this guide to be routed to the sign-up page.</p>
+            <img src="Signup.png" 
+                 alt="Sign Up Page" class="rounded-xl shadow-md mb-3"/>
+            <p class="text-sm">Required: Name, Phone, Email, Address, Pin on Map, Password</p>
+            <p class="text-sm mt-1">Optional: Facebook, Instagram</p>
+            <p class="text-xs mt-2 italic">Quick tip: Drop your map pin at a safe meeting place.</p>
+          `
+        },
+        {
+          title: "Add Pet",
+          content: `
+            <img src="AddPet.png" 
+                 alt="Add Pet Page" class="rounded-xl shadow-md mb-3"/>
+            <p class="text-sm mb-2">Enter your Pet Code below to register your pet:</p>
+
+            <div class="bg-gray-100 p-4 rounded-xl shadow-md mb-3 text-center">
+              <label class="block text-xs uppercase tracking-wide text-gray-600 mb-1">
+                Your Pet Code
+              </label>
+              <div class="flex items-center space-x-2">
+                <input type="text" id="petCode" value="${petPassword}" 
+                       readonly onclick="this.select()" 
+                       class="text-2xl font-bold tracking-widest text-center bg-white border p-2 rounded w-full">
+                <button id="toggleBtn" onclick="toggleCode()" 
+                        class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">🙈</button>
+                <button id="copyBtn" onclick="copyCode()" 
+                        class="px-2 py-1 text-white rounded brand-bg brand-hover">Copy</button>
+              </div>
+            </div>
+
+            <p class="text-xs italic text-gray-500">
+              Keep this code safe — it is unique to your pet.
+            </p>
+          `
+        },
+        {
+          title: "Edit Pet",
+          content: `
+            <img src="EditPet.png" 
+                 alt="Edit Pet Page" class="rounded-xl shadow-md mb-3"/>
+            <p class="text-sm">Select the pet, tap edit, make changes, save.</p>
+          `
+        }
+      ];
+
+      renderStep(0);
+    } else {
+      document.getElementById("app").innerHTML = `<p class="text-red-600">Pet not found.</p>`;
+    }
+  }
+
+  function renderStep(index) {
+    currentStep = index;
+    maxStepReached = Math.max(maxStepReached, index);
+
+    document.getElementById("app").innerHTML = `
+      <div class="animate-step">
+        <div class="flex justify-between items-center mb-6 relative">
+          ${steps.map((s, i) => `
+            <div class="flex-1 flex items-center">
+              <div 
+                onclick="${i <= maxStepReached ? `goToStep(${i})` : ''}"
+                class="w-8 h-8 flex items-center justify-center rounded-full text-white 
+                       ${i <= maxStepReached ? 'brand-bg cursor-pointer' : 'bg-gray-300 cursor-not-allowed'}
+                       ${i === currentStep ? 'brand-ring scale-105' : ''} transition-all duration-300">
+                ${i + 1}
+              </div>
+              ${i < steps.length - 1 
+                ? `<div class="flex-1 h-1 mx-1 relative rounded bg-gray-200">
+                    <div class="absolute top-0 left-0 h-1 brand-progress rounded"
+                      style="width: ${i < maxStepReached ? '100%' : '0%'}"></div>
+                  </div>` 
+                : '' }
+            </div>
+          `).join('')}
+        </div>
+
+        <h2 class="text-2xl font-bold text-center mb-4">${steps[index].title}</h2>
+        <div>${steps[index].content}</div>
+      </div>
+
+      <div class="fixed bottom-0 left-0 w-full flex justify-center bg-white border-t shadow-lg">
+        <div class="w-full max-w-md p-4">
+          <button onclick="nextStep()" 
+                  class="w-full brand-gradient text-white py-3 rounded-2xl shadow hover:opacity-90 transition">
+            ${index === steps.length - 1 ? "Complete" : "Next Step"}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  window.nextStep = function () {
+    if (currentStep < steps.length - 1) {
+      renderStep(currentStep + 1);
+    } else {
+      runConfetti();
+      setTimeout(() => window.location.href = "https://furtagph.com/auth.html", 2500);
+    }
+  };
+
+  window.goToStep = function (stepIndex) {
+    if (stepIndex <= maxStepReached) renderStep(stepIndex);
+  };
+
+  window.toggleCode = function () {
+    const input = document.getElementById("petCode");
+    const toggleBtn = document.getElementById("toggleBtn");
+    if (input.type === "text") {
+      input.type = "password";
+      toggleBtn.textContent = "👁️";
+    } else {
+      input.type = "text";
+      toggleBtn.textContent = "🙈";
+    }
+  };
+
+  window.copyCode = function () {
+    const input = document.getElementById("petCode");
+    const copyBtn = document.getElementById("copyBtn");
+    navigator.clipboard.writeText(input.value).then(() => {
+      copyBtn.textContent = "✅ Copied!";
+      copyBtn.classList.remove("brand-bg");
+      copyBtn.classList.add("bg-green-500");
+      setTimeout(() => {
+        copyBtn.textContent = "Copy";
+        copyBtn.classList.remove("bg-green-500");
+        copyBtn.classList.add("brand-bg");
+      }, 2000);
+    });
+  };
+
+  function runConfetti() {
+    const duration = 1.5 * 1000;
+    const end = Date.now() + duration;
+    (function frame() {
+      confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 } });
+      confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 } });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    })();
+  }
+
+  loadPetData();
+</script>
+</body>
+</html>
