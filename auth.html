@@ -397,43 +397,103 @@ safeOn('linkBackToLogin', ()=> goToSlide(0));
 
 /* ========== LEAFLET MAP (lazy init) ========== */
 let map = null, marker = null, mapInitialized = false;
+const DEFAULT_LAT = 14.599512, DEFAULT_LNG = 120.984222; // Manila, PH as fallback
+
+/**
+ * Initializes the map centered on a given location.
+ * @param {number} lat Latitude
+ * @param {number} lng Longitude
+ */
+function initMap(lat, lng) {
+    if (mapInitialized) {
+        // Map is already initialized, just ensure proper sizing and update view/marker
+        if (map) {
+            map.invalidateSize();
+            map.setView([lat, lng], 18); // Zoom in a bit on the determined location (zoom 13 is good)
+            if (marker) {
+                marker.setLatLng([lat, lng]);
+            } else {
+                marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+                marker.on('dragend', updateHiddenInputs);
+            }
+            updateHiddenInputs(marker.getLatLng());
+        }
+        return;
+    }
+
+    mapInitialized = true;
+    
+    // Initialize the map
+    map = L.map('map', { center: [lat, lng], zoom: 13, zoomControl: true }); // Start zoomed in
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+
+    // Add a draggable marker
+    marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+
+    // Wire up events
+    marker.on('dragend', updateHiddenInputs);
+    map.on('click', e => {
+        if(marker) marker.setLatLng(e.latlng);
+        else marker = L.marker(e.latlng, { draggable:true }).addTo(map);
+        updateHiddenInputs(e.latlng);
+    });
+
+    // Set initial hidden inputs
+    updateHiddenInputs(marker.getLatLng());
+
+    // Ensure map tiles render well when slide becomes visible
+    setTimeout(()=> { if(map) map.invalidateSize(); }, 120);
+}
+
+/**
+ * Helper to update the hidden lat/lng inputs.
+ * @param {L.LatLng} latlng Leaflet LatLng object.
+ */
+function updateHiddenInputs(latlng) {
+    const p = latlng || marker.getLatLng();
+    document.getElementById('lat').value = p.lat.toFixed(6);
+    document.getElementById('lng').value = p.lng.toFixed(6);
+}
+
+/**
+ * Tries to get user's location and initialize map, falling back to default.
+ */
+function getUserLocation() {
+    if (navigator.geolocation) {
+        console.log("Attempting to get user location...");
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                console.log(`Location found: ${lat}, ${lng}`);
+                initMap(lat, lng);
+            },
+            (error) => {
+                console.warn(`Geolocation failed: ${error.message}. Falling back to default location.`);
+                // Use default location on failure or permission denial
+                initMap(DEFAULT_LAT, DEFAULT_LNG);
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+    } else {
+        console.warn("Geolocation is not supported by this browser. Falling back to default location.");
+        initMap(DEFAULT_LAT, DEFAULT_LNG);
+    }
+}
+
+
 function maybeInitMap(){
-  if(!swiper) { setTimeout(maybeInitMap, 200); return; }
-  // only init when signup slide is active
-  if(mapInitialized){
-    if(swiper.activeIndex===1) setTimeout(()=> { if(map) map.invalidateSize(); }, 80);
-    return;
+  if(!swiper) { setTimeout(maybeInitMap, 200); return; }
+  // only proceed if signup slide is active and map is not yet fully initialized
+  if(swiper.activeIndex !== 1) return;
+  
+  // If the map is not initialized, try to get user location.
+  if (!mapInitialized) {
+      getUserLocation();
+  } else {
+      // Map is initialized, just ensure sizing when slide becomes active
+      setTimeout(()=> { if(map) map.invalidateSize(); }, 80);
   }
-  if(swiper.activeIndex !== 1) return;
-  mapInitialized = true;
-
-  const defaultLat = 14.599512, defaultLng = 120.984222;
-  map = L.map('map', { center: [defaultLat, defaultLng], zoom: 6, zoomControl: true });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
-
-  marker = L.marker([defaultLat, defaultLng], { draggable:true }).addTo(map);
-  marker.on('dragend', () => {
-    const p = marker.getLatLng();
-    document.getElementById('lat').value = p.lat.toFixed(6);
-    document.getElementById('lng').value = p.lng.toFixed(6);
-  });
-
-  // allow clicking on map to move pin
-  map.on('click', e => {
-    if(marker) marker.setLatLng(e.latlng);
-    else marker = L.marker(e.latlng, { draggable:true }).addTo(map);
-    const p = e.latlng;
-    document.getElementById('lat').value = p.lat.toFixed(6);
-    document.getElementById('lng').value = p.lng.toFixed(6);
-  });
-
-  // set hidden inputs
-  const p = marker.getLatLng();
-  document.getElementById('lat').value = p.lat.toFixed(6);
-  document.getElementById('lng').value = p.lng.toFixed(6);
-
-  // Ensure map tiles render well when slide becomes visible
-  setTimeout(()=> { if(map) map.invalidateSize(); }, 120);
 }
 
 /* ========== AUTH ACTIONS ========== */
