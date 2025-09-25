@@ -730,7 +730,7 @@ function findLocationFromDoc(data){
 function initProfileMap(location){
   const defaultCoords = location || { lat: 12.8797, lng: 121.7740 }; // PH center
   if(!profileMap){
-    profileMap = L.map('profileMap', { zoomControl: true }).setView([defaultCoords.lat, defaultCoords.lng], 10);
+    profileMap = L.map('profileMap', { zoomControl: true }).setView([defaultCoords.lat, defaultCoords.lng], 18);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(profileMap);
     profileMarker = L.marker([defaultCoords.lat, defaultCoords.lng], { draggable: true }).addTo(profileMap);
     profileMarker.on('dragend', () => {

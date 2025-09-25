@@ -1,313 +1,320 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ff6f61">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff6f61">
 
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>FurTagPH — Auth</title>
-<link rel="icon" type="image/x-icon" href="favicon.ico">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>FurTagPH — Auth</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
 
-<!-- iOS PWA support -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FurTagPH">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FurTagPH">
 
-<!-- iOS App Icons -->
-<link rel="apple-touch-icon" href="furtagph-192.png">
-<link rel="apple-touch-icon" sizes="512x512" href="furtagph-512.png">
+    <link rel="apple-touch-icon" href="furtagph-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="furtagph-512.png">
 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<!-- Swiper -->
-<link rel="stylesheet" href="https://unpkg.com/swiper@9/swiper-bundle.min.css" />
-<script src="https://unpkg.com/swiper@9/swiper-bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
-<!-- Leaflet -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root{
+            --brand-1:#ff6f61; --brand-2:#ff896f; --bg:#fbfbfc; --muted:#666; --radius:14px;
+            --container-bg: #ffffff; /* New: solid white for card content */
+        }
 
-<!-- Firebase compat -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+        html,body{
+            height:100%; margin:0; background:var(--bg); font-family:Inter,system-ui,Roboto,Arial,sans-serif;
+            -webkit-font-smoothing:antialiased; -webkit-touch-callout:none; 
+            padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right); padding-bottom: env(safe-area-inset-bottom);
+            overflow-x: hidden; /* Prevent horizontal scroll from transitions */
+        }
 
-<style>
-  :root{
-    --brand-1:#ff6f61; --brand-2:#ff896f; --bg:#fbfbfc; --muted:#666; --radius:14px;
-  }
+        /* intro full-screen mp4 */
+        .intro { 
+            position:fixed; inset:0; z-index:1200; display:flex; align-items:center; justify-content:center; 
+            background:black; transition:opacity .6s ease, visibility .6s; visibility:visible; opacity:1; 
+            pointer-events: auto;
+        }
+        .intro.hidden { opacity:0; visibility:hidden; pointer-events:none; }
+        .intro video { width:100%; height:100%; object-fit:cover; }
 
-  html,body{height:100%;margin:0;background:var(--bg);font-family:Inter,system-ui,Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased; -webkit-touch-callout:none;   /* 👇 add this to respect iOS safe areas */
-  padding-top: env(safe-area-inset-top);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-  padding-bottom: env(safe-area-inset-bottom);}
+        /* app container */
+        .app { 
+            position:relative; z-index:10; min-height:100vh; display:flex; 
+            align-items:flex-start; /* Align to top for better mobile feel */
+            justify-content:center; padding:20px; box-sizing:border-box;
+            padding-top: calc(20px + env(safe-area-inset-top));
+        }
+        
+        .card { 
+            width:100%; max-width:440px; border-radius:var(--radius); 
+            background: var(--container-bg); 
+            box-shadow:0 28px 60px rgba(6,10,20,0.07); 
+            overflow:hidden; /* Keep card structure neat */
+        }
+        
+        .header { 
+            display:flex; align-items:center; gap:12px; 
+            padding:16px 18px; 
+            background:linear-gradient(90deg,var(--brand-1),var(--brand-2)); 
+            color:white;
+        }
+        .header img { height:44px; border-radius:8px; }
+        .header h2 { margin:0; font-size:18px; font-weight:700; }
 
-  .header {
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding: calc(16px + env(safe-area-inset-top)) 18px 16px 18px;
-  background: linear-gradient(90deg, var(--brand-1), var(--brand-2));
-  color:white;
-  border-top-left-radius: var(--radius);
-  border-top-right-radius: var(--radius);
-}
+        /* TAB/VIEW MANAGEMENT (Replaces Swiper) */
+        .view-container { 
+            position: relative; 
+            overflow: hidden; 
+        }
+        
+        .form-view {
+            padding: 18px;
+            box-sizing: border-box;
+            width: 100%;
+            transition: transform 0.36s cubic-bezier(.2,.9,.2,1), opacity 0.32s ease;
+            position: absolute; /* Stack forms */
+            top: 0;
+            left: 0;
+            opacity: 0;
+            transform: translateX(100%);
+            min-height: 240px; /* Base height for login/reset */
+            visibility: hidden; /* Use visibility for accessibility/focus */
+        }
 
-  /* intro full-screen mp4 */
-/* intro full-screen mp4 */
-.intro { 
-  position:fixed; 
-  inset:0; 
-  z-index:1200; 
-  display:flex; 
-  align-items:center; 
-  justify-content:center; 
-  background:black; 
-  transition:opacity .6s ease, visibility .6s; 
-  visibility:visible; 
-  opacity:1; 
-  pointer-events: auto;   /* block clicks under video */
-}
-.intro.hidden { 
-  opacity:0; 
-  visibility:hidden; 
-  pointer-events:none;   /* allow interaction after fade */
-}
-  .intro video { width:100%; height:100%; object-fit:cover; }
+        .form-view.active {
+            position: static; /* Take up space when active */
+            opacity: 1;
+            transform: translateX(0);
+            visibility: visible;
+        }
+        
+        /* Specific animations for better UX */
+        #loginView.active, #resetView.active { min-height: 240px; }
+        #signupView { min-height: 520px; } /* Set min height for signup to prevent jump */
+        
+        /* When transitioning FROM a view, animate out to the left */
+        .form-view:not(.active) {
+            position: absolute; /* Revert to absolute for smooth transition out */
+            top: 0;
+        }
 
-  /* app container */
-  .app { position:relative; z-index:10; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
-  .card { width:100%; max-width:920px; border-radius:var(--radius); background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.99)); box-shadow:0 28px 60px rgba(6,10,20,0.07); overflow:visible; }
-  .header { display:flex; align-items:center; gap:12px; padding:16px 18px; background:linear-gradient(90deg,var(--brand-1),var(--brand-2)); color:white; border-top-left-radius:var(--radius); border-top-right-radius:var(--radius); }
-  .header img { height:44px; border-radius:8px; }
-  .header h2 { margin:0; font-size:16px; font-weight:600; }
+        /* forms - base */
+        .form { 
+            width:100%; max-width:400px; margin:auto; box-sizing:border-box; 
+            padding:8px 0 0 0; /* Adjusted padding as form-view has padding */
+            background:transparent; 
+        }
+        
+        label{ display:block; margin:10px 0 6px; font-size:13px; color:#333; }
+        input[type="text"], input[type="email"], input[type="password"], input[type="tel"], textarea, select {
+            width:100%; padding:10px 12px; font-size:15px; border-radius:10px; border:1px solid #e6e6e6; box-sizing:border-box; background:white;
+        }
+        textarea { min-height:70px; resize:vertical; }
+        .row { display:flex; gap:10px; }
+        .row .col { flex:1; }
 
-  /* SWIPER adjustments */
-  .swiper { width:100%; height:auto; }             /* let swiper decide height per-slide */
-  /* IMPORTANT: use flex-start so slides size independently (not stretch to tallest) */
-  .swiper-wrapper { align-items:flex-start; }
-  .swiper-slide { display:flex; padding:18px; box-sizing:border-box; height:auto !important; align-items:flex-start; } /* ensure slides are auto height */
+        .btn { display:inline-block; width:100%; padding:12px; border-radius:10px; border:0; color:white; background:linear-gradient(90deg,var(--brand-1),var(--brand-2)); font-weight:700; font-size:15px; cursor:pointer; transition: opacity 0.2s; }
+        .btn.secondary { background:#fff; color:#333; border:1px solid #eee; box-shadow:0 6px 18px rgba(0,0,0,0.03); }
+        .btn[disabled]{ opacity:.65; cursor:not-allowed; }
 
-  /* forms - base */
-  .form { width:100%; max-width:560px; margin:auto; box-sizing:border-box; padding:8px 12px 20px 12px; background:transparent; }
-  label{ display:block; margin:10px 0 6px; font-size:13px; color:#333; }
-  input[type="text"], input[type="email"], input[type="password"], input[type="tel"], textarea, select {
-    width:100%; padding:10px 12px; font-size:15px; border-radius:10px; border:1px solid #e6e6e6; box-sizing:border-box; background:white;
-  }
-  textarea { min-height:70px; resize:vertical; }
-  .row { display:flex; gap:10px; }
-  .row .col { flex:1; }
+        .muted { color:var(--muted); font-size:13px; margin-top:8px; }
+        .error { color:#b00020; font-size:13px; margin-top:8px; min-height:18px; }
 
-  .btn { display:inline-block; width:100%; padding:12px; border-radius:10px; border:0; color:white; background:linear-gradient(90deg,var(--brand-1),var(--brand-2)); font-weight:700; font-size:15px; cursor:pointer; }
-  .btn.secondary { background:#fff; color:#333; border:1px solid #eee; box-shadow:0 6px 18px rgba(0,0,0,0.03); }
-  .btn[disabled]{ opacity:.65; cursor:not-allowed; }
+        /* The scrollable nature is now on the form itself for the signup view */
+        .form.scrollable { 
+            max-height: calc(100vh - 120px - env(safe-area-inset-top)); /* 100vh - header - padding/margin */
+            overflow-y: auto; 
+            padding-bottom: 24px; 
+            -webkit-overflow-scrolling:touch; 
+        }
 
-  .muted { color:var(--muted); font-size:13px; margin-top:8px; }
-  .error { color:#b00020; font-size:13px; margin-top:8px; min-height:18px; }
+        /* map */
+        #map { 
+            width:100%; height:240px; border-radius:10px; border:1px solid #e6e6e6; margin-top:8px; 
+            touch-action: pan-y; -ms-touch-action: pan-y; 
+        }
 
-  /* compact center for short forms (login/reset) */
-  .form.centered { display:flex; flex-direction:column; justify-content:center; align-items:stretch; min-height:180px; }
-
-  /* tall scrollable signup form */
-  /* touch-action: pan-y allows vertical gestures to go to the map/form while horizontal swipes bubble to the swiper */
-  .form.tall { max-height: calc(80vh); overflow:auto; padding-bottom:24px; -webkit-overflow-scrolling:touch; touch-action: pan-y; -ms-touch-action: pan-y; }
-
-  /* slide-in animation for form content */
-  .form { transform: translateX(18px); opacity: 0; transition: transform .36s cubic-bezier(.2,.9,.2,1), opacity .32s ease; }
-  .swiper-slide-active .form { transform: translateX(0); opacity: 1; }
-
-  /* map */
-  #map { width:100%; height:320px; border-radius:10px; border:1px solid #e6e6e6; margin-top:8px; touch-action: pan-y; -ms-touch-action: pan-y; } /* pan-y: vertical scroll on map, horizontal to swiper */
-  input[type="hidden"]{ display:none; }
-
-  /* pagination styling (kept) */
-  .swiper-pagination-bullet { opacity: 0.6; background: #ddd; }
-  .swiper-pagination-bullet-active { background: var(--brand-1); opacity: 1; }
-
-  /* responsive */
-  @media (max-width:720px){
-    .card{ margin:0 8px; border-radius:12px; }
-    #map{ height:240px; }
-    .form.centered { min-height: 150px; }
-    .form.tall{ max-height: 70vh; }
-  }
-</style>
+        input[type="hidden"]{ display:none; }
+        
+        /* Responsive adjustments */
+        @media (max-width:480px){
+            .app{ padding: 10px; padding-top: calc(10px + env(safe-area-inset-top)); }
+            .card{ margin:0; border-radius:12px; }
+        }
+    </style>
 </head>
 <body>
 <div id="installContainer" style="position:fixed;bottom:20px;right:20px;z-index:1000;"></div>
 
-<!-- Fullscreen MP4 intro -->
 <div id="intro" class="intro" role="img" aria-label="Intro" inert>
-  <video id="introVideo" autoplay muted playsinline webkit-playsinline>
-    <source src="FurtagPH.mp4" type="video/mp4">
-  </video>
+    <video id="introVideo" autoplay muted playsinline webkit-playsinline>
+        <source src="FurtagPH.mp4" type="video/mp4">
+    </video>
 </div>
 
 <div class="app">
-  <div id="card" class="card" role="main" aria-labelledby="appTitle">
-    <div class="header">
-      <img src="FurTagPH.png" alt="FurTagPH Logo">
-      <h2 id="appTitle">FurTagPH — Account</h2>
-    </div>
-
-    <!-- swiper -->
-    <div class="swiper" id="authSwiper">
-      <div class="swiper-wrapper">
-
-        <!-- LOGIN (compact centered) -->
-        <div class="swiper-slide" aria-label="Login">
-          <div class="form centered" id="loginSlide">
-            <h3 style="margin:0 0 8px 0">Login</h3>
-
-            <label for="loginEmail">Email</label>
-            <input id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com">
-
-<label for="loginPassword">Password</label>
-<div style="position:relative;">
-  <input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••" style="padding-right:40px;">
-  <button type="button" onclick="togglePassword('loginPassword', this)" 
-    style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:14px; color:#666;">
-    👁️
-  </button>
-</div>
-
-
-            <div style="margin-top:14px">
-              <button id="loginBtn" class="btn" type="button">Sign in</button>
-            </div>
-
-            <div id="loginError" class="error" role="alert"></div>
-
-            <div class="muted" style="margin-top:12px; display:flex; gap:8px; justify-content:space-between; align-items:center">
-              <small>Don't have an account? <a href="#" id="linkToSignup">Sign up</a></small>
-              <small><a href="#" id="linkToReset">Forgot password?</a></small>
-            </div>
-          </div>
+    <div id="card" class="card" role="main" aria-labelledby="appTitle">
+        <div class="header">
+            <img src="FurTagPH.png" alt="FurTagPH Logo">
+            <h2 id="appTitle">FurTagPH — Account</h2>
         </div>
 
-        <!-- SIGNUP (tall & scrollable) -->
-        <div class="swiper-slide" aria-label="Sign Up">
-          <div class="form tall" id="signupSlide">
-            <h3 style="margin:0 0 8px 0">Sign Up</h3>
+        <div class="view-container">
 
-            <label>Full name</label>
-            <input id="fullName" type="text" placeholder="Juan dela Cruz" autocomplete="name">
+            <div id="loginView" class="form-view active" data-view-name="login">
+                <div class="form">
+                    <h3 style="margin:0 0 8px 0">Login to your account</h3>
 
-            <label>Phone number</label>
-            <input id="phoneNumber" type="tel" placeholder="+63 9xx xxx xxxx" autocomplete="tel">
+                    <label for="loginEmail">Email</label>
+                    <input id="loginEmail" type="email" autocomplete="email" placeholder="you@example.com">
 
-            <label>Email</label>
-            <input id="emailAddress" type="email" placeholder="you@example.com" autocomplete="email">
+                    <label for="loginPassword">Password</label>
+                    <div style="position:relative;">
+                        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••••" style="padding-right:40px;">
+                        <button type="button" onclick="togglePassword('loginPassword', this)" 
+                            style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:14px; color:#666;" aria-label="Show password">
+                            👁️
+                        </button>
+                    </div>
 
-            <div class="row" style="margin-top:8px;">
-              <div class="col">
-                <label>Facebook</label>
-                <input id="facebookLink" type="text" placeholder="https://facebook.com/yourprofile">
-              </div>
-              <div class="col">
-                <label>Instagram</label>
-                <input id="instagramLink" type="text" placeholder="https://instagram.com/yourprofile">
-              </div>
+                    <div style="margin-top:20px">
+                        <button id="loginBtn" class="btn" type="button">Sign in</button>
+                    </div>
+
+                    <div id="loginError" class="error" role="alert"></div>
+
+                    <div class="muted" style="margin-top:16px; display:flex; flex-direction:column; gap:8px;">
+                        <small>Don't have an account? <a href="#" id="linkToSignup" onclick="changeView('signup')">Sign up</a></small>
+                        <small><a href="#" id="linkToReset" onclick="changeView('reset')">Forgot password?</a></small>
+                    </div>
+                </div>
             </div>
 
-            <label style="margin-top:10px">Address</label>
-            <input id="street" type="text" placeholder="Street / Barangay">
-            <div class="row" style="margin-top:8px">
-              <div class="col"><input id="city" type="text" placeholder="City"></div>
-              <div class="col"><input id="province" type="text" placeholder="Province / State"></div>
+            <div id="signupView" class="form-view" data-view-name="signup">
+                <div class="form scrollable" id="signupFormContent">
+                    <h3 style="margin:0 0 8px 0">Create a New Account</h3>
+                    <p class="muted" style="margin-top:0;">Fill in your details to get started with FurTagPH.</p>
+
+                    <label>Full name *</label>
+                    <input id="fullName" type="text" placeholder="Juan dela Cruz" autocomplete="name" required>
+
+                    <label>Phone number</label>
+                    <input id="phoneNumber" type="tel" placeholder="+63 9xx xxx xxxx" autocomplete="tel">
+
+                    <label>Email *</label>
+                    <input id="emailAddress" type="email" placeholder="you@example.com" autocomplete="email" required>
+
+                    <div class="row" style="margin-top:8px;">
+                        <div class="col">
+                            <label>Facebook Link</label>
+                            <input id="facebookLink" type="text" placeholder="facebook.com/yourprofile">
+                        </div>
+                        <div class="col">
+                            <label>Instagram Link</label>
+                            <input id="instagramLink" type="text" placeholder="instagram.com/yourprofile">
+                        </div>
+                    </div>
+
+                    <label style="margin-top:10px">Address</label>
+                    <input id="street" type="text" placeholder="Street / Barangay">
+                    <div class="row" style="margin-top:8px">
+                        <div class="col"><input id="city" type="text" placeholder="City"></div>
+                        <div class="col"><input id="province" type="text" placeholder="Province / State"></div>
+                    </div>
+                    <div class="row" style="margin-top:8px">
+                        <div class="col"><input id="country" type="text" placeholder="Country"></div>
+                        <div style="width:140px"><input id="zipcode" type="text" placeholder="Zipcode"></div>
+                    </div>
+
+                    <label style="margin-top:10px">Location (drag pin on map below)</label>
+                    <div id="map" aria-hidden="false"></div>
+                    <input id="lat" type="hidden">
+                    <input id="lng" type="hidden">
+
+                    <div class="row" style="margin-top:10px">
+                        <div class="col">
+                            <label>Password *</label>
+                            <div style="position:relative;">
+                                <input id="password" type="password" placeholder="Create password" autocomplete="new-password" required style="padding-right:40px;">
+                                <button type="button" onclick="togglePassword('password', this)" 
+                                    style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:14px; color:#666;" aria-label="Show password">
+                                    👁️
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <label>Confirm Password *</label>
+                            <div style="position:relative;">
+                                <input id="password2" type="password" placeholder="Confirm password" autocomplete="new-password" required style="padding-right:40px;">
+                                <button type="button" onclick="togglePassword('password2', this)" 
+                                    style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:14px; color:#666;" aria-label="Show password">
+                                    👁️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div style="margin-top:20px; display:flex; gap:10px;">
+                        <button id="signupBtn" class="btn" type="button">Create account</button>
+                        <button class="btn secondary" type="button" onclick="clearSignupForm()">Clear</button>
+                    </div>
+
+                    <div id="signupError" class="error"></div>
+                    <div class="muted" style="margin-top:10px; padding-bottom:10px;">
+                        <small>Already have an account? <a href="#" onclick="changeView('login')">Login here</a></small>
+                    </div>
+                </div>
             </div>
-            <div class="row" style="margin-top:8px">
-              <div class="col"><input id="country" type="text" placeholder="Country"></div>
-              <div style="width:140px"><input id="zipcode" type="text" placeholder="Zipcode"></div>
+
+            <div id="resetView" class="form-view" data-view-name="reset">
+                <div class="form">
+                    <h3 style="margin:0 0 8px 0">Reset Password</h3>
+                    <p class="muted" style="margin-top:0;">Enter your email and we'll send you a link to reset your password.</p>
+                    
+                    <label>Email</label>
+                    <input id="resetEmail" type="email" placeholder="you@example.com">
+                    
+                    <div style="margin-top:20px">
+                        <button id="resetBtn" class="btn" type="button">Send reset email</button>
+                    </div>
+
+                    <div id="resetMsg" class="muted" style="margin-top:16px; font-weight: 500;"></div>
+                    <div id="resetError" class="error"></div>
+                    
+                    <div style="margin-top:14px" class="muted"><a href="#" id="linkBackToLogin" onclick="changeView('login')">Back to login</a></div>
+                </div>
             </div>
 
-            <label style="margin-top:10px">Location (drag pin)</label>
-            <div id="map" aria-hidden="false"></div>
-
-            <!-- hidden lat/lng -->
-            <input id="lat" type="hidden">
-            <input id="lng" type="hidden">
-
-<div class="row" style="margin-top:10px">
-  <div class="col">
-    <label>Password</label>
-    <div style="position:relative;">
-      <input id="password" type="password" placeholder="Create password" autocomplete="new-password" style="padding-right:40px;">
-      <button type="button" onclick="togglePassword('password', this)" 
-        style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:14px; color:#666;">
-        👁️
-      </button>
-    </div>
-  </div>
-
-  <div class="col">
-    <label>Confirm Password</label>
-    <div style="position:relative;">
-      <input id="password2" type="password" placeholder="Confirm password" autocomplete="new-password" style="padding-right:40px;">
-      <button type="button" onclick="togglePassword('password2', this)" 
-        style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:14px; color:#666;">
-        👁️
-      </button>
-    </div>
-  </div>
-</div>
-
-
-            <div style="margin-top:12px; display:flex; gap:8px;">
-              <button id="signupBtn" class="btn" type="button">Create account</button>
-              <button class="btn secondary" type="button" onclick="clearSignupForm()">Clear</button>
-            </div>
-
-            <div id="signupError" class="error"></div>
-            <div class="muted" style="margin-top:10px">We store your profile in Firestore (collection <code>users</code>). Passwords are managed by Firebase Auth.</div>
-          </div>
-        </div>
-
-        <!-- RESET (compact centered) -->
-        <div class="swiper-slide" aria-label="Reset Password">
-          <div class="form centered" id="resetSlide">
-            <h3 style="margin:0 0 8px 0">Reset Password</h3>
-            <label>Email</label>
-            <input id="resetEmail" type="email" placeholder="you@example.com">
-            <div style="margin-top:12px">
-              <button id="resetBtn" class="btn" type="button">Send reset email</button>
-            </div>
-            <div id="resetMsg" class="muted" style="margin-top:8px"></div>
-            <div id="resetError" class="error"></div>
-            <div style="margin-top:14px" class="muted"><a href="#" id="linkBackToLogin">Back to login</a></div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- pagination (kept) -->
-      <div class="swiper-pagination"></div>
-
-      <!-- NOTE: arrows removed intentionally to match your request -->
-    </div><!-- end swiper -->
-  </div><!-- end card -->
-</div><!-- end app -->
-
-<div id="iosInstallPrompt" style="display:none; 
-  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-  background: #fff; color: #333; padding: 14px 18px;
-  border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-  font-size: 15px; font-weight: 500; z-index: 9999; max-width: 320px; text-align: center;">
-  📲 To install FurTagPH, tap <strong>Share</strong> <span style="font-size:18px">⬆️</span> then <strong>Add to Home Screen</strong>
+        </div></div></div><div id="iosInstallPrompt" style="display:none; 
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #fff; color: #333; padding: 14px 18px;
+    border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+    font-size: 15px; font-weight: 500; z-index: 9999; max-width: 320px; text-align: center;">
+    📲 To install FurTagPH, tap <strong>Share</strong> <span style="font-size:18px">⬆️</span> then <strong>Add to Home Screen</strong>
 </div>
 
 
 <script>
-/* ========== FIREBASE ========== */
+/* ========== FIREBASE CONFIG (RETAINED) ========== */
 const firebaseConfig = {
-  apiKey: "AIzaSyCARXD0ZyOfgyrvsY9KiVXs4VwloiumiHE",
-  authDomain: "furtagph-cf3d3.firebaseapp.com",
-  projectId: "furtagph-cf3d3",
-  storageBucket: "furtagph-cf3d3.firebasestorage.app",
-  messagingSenderId: "639123411408",
-  appId: "1:639123411408:web:737d4aa4a54b414dcda9d5",
-  measurementId: "G-GHPYPB8XW8"
+    apiKey: "AIzaSyCARXD0ZyOfgyrvsY9KiVXs4VwloiumiHE",
+    authDomain: "furtagph-cf3d3.firebaseapp.com",
+    projectId: "furtagph-cf3d3",
+    storageBucket: "furtagph-cf3d3.firebasestorage.app",
+    messagingSenderId: "639123411408",
+    appId: "1:639123411408:web:737d4aa4a54b414dcda9d5",
+    measurementId: "G-GHPYPB8XW8"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -315,101 +322,117 @@ const db = firebase.firestore();
 
 // 🔒 Keep users logged in after closing/reloading
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-  .then(() => {
-    console.log("Auth persistence set to LOCAL (keeps user logged in)");
-  })
-  .catch((error) => {
-    console.error("Error setting auth persistence:", error);
-  });
+    .then(() => {
+        console.log("Auth persistence set to LOCAL (keeps user logged in)");
+    })
+    .catch((error) => {
+        console.error("Error setting auth persistence:", error);
+    });
 
-// Optional: auto-redirect if already logged in
-auth.onAuthStateChanged(user => {
-  if (user) {
-    console.log("User already logged in:", user.email);
-    window.location.href = 'furboard.html';
-  }
-});
-
-/* ========== INTRO (mp4) ------------- */
+/* ========== INTRO (mp4) (RETAINED) ------------- */
 const introEl = document.getElementById('intro');
 const introVideo = document.getElementById('introVideo');
 const INTRO_MS = 3000;
 let introTimer = setTimeout(() => fadeIntro(), INTRO_MS);
 introVideo.addEventListener('ended', () => fadeIntro());
+
 function fadeIntro(){
-  if(!introEl.classList.contains('hidden')){
-    introEl.classList.add('hidden');
-    introEl.removeAttribute("inert"); // ✅ allow interaction again
-    setTimeout(()=> {
-      try { if(swiper) { swiper.update(); swiper.allowTouchMove = true; } } catch(e){}
-      maybeInitMap();
-    }, 320);
-  }
+    if(!introEl.classList.contains('hidden')){
+        introEl.classList.add('hidden');
+        introEl.removeAttribute("inert"); 
+        
+        // After intro fades, initialize the map (only needed for signup)
+        setTimeout(()=> {
+            maybeInitMap();
+        }, 320);
+    }
 }
 
 
-/* ========== SWIPER ========== */
-let swiper = null;
-function initSwiper(){
-  if(swiper) return;
-  swiper = new Swiper('#authSwiper', {
-    direction: 'horizontal',
-    speed: 420,
-    slidesPerView: 1,
-    spaceBetween: 0,
-    grabCursor: true,
-    simulateTouch: true,
-    threshold: 8,
-    resistanceRatio: .85,
-    watchOverflow: true,
-    autoHeight: true,                // let swiper auto-size per-slide
-    touchStartPreventDefault: false,
-    touchStartForcePreventDefault: false,
-    nested: true,
-    touchAngle: 20,                  // better separate horizontal vs vertical gestures
-    pagination: { el: '.swiper-pagination', clickable: true }
-    // navigation intentionally removed (no arrows)
-  });
+/* ========== VIEW/TAB MANAGEMENT (NEW LOGIC - Replaces Swiper) ========== */
+const views = {
+    login: document.getElementById('loginView'),
+    signup: document.getElementById('signupView'),
+    reset: document.getElementById('resetView')
+};
+let currentView = 'login'; // Track the currently active view
 
-  // lock swipe while intro plays (will be unlocked in fadeIntro)
-  swiper.allowTouchMove = false;
+/**
+ * Changes the active form view with a transition.
+ * @param {string} targetViewName 'login', 'signup', or 'reset'
+ */
+function changeView(targetViewName) {
+    if (targetViewName === currentView) return;
+    
+    // Get the current and target view elements
+    const currentEl = views[currentView];
+    const targetEl = views[targetViewName];
+    
+    if (!currentEl || !targetEl) {
+        console.error(`Attempted to transition to invalid view: ${targetViewName}`);
+        return;
+    }
+    
+    // 1. Setup the target view's starting position (from the right)
+    targetEl.style.transform = 'translateX(100%)';
+    targetEl.style.opacity = '0';
+    targetEl.style.transition = 'none'; // Temporarily disable transition for positioning
+    targetEl.classList.add('active'); // Add active class to set 'static' position
+    targetEl.style.visibility = 'visible';
+    
+    // 2. Animate both views
+    setTimeout(() => {
+        targetEl.style.transition = 'transform 0.36s cubic-bezier(.2,.9,.2,1), opacity 0.32s ease';
+        currentEl.style.transition = 'transform 0.36s cubic-bezier(.2,.9,.2,1), opacity 0.32s ease';
 
-  swiper.on('slideChange', function(){
-    // lazy-init map when signup shows and ensure sizing
-    maybeInitMap();
-    // small timeout for animation settle
-    setTimeout(()=> { try { if(map) map.invalidateSize(); } catch(e){} }, 160);
-  });
+        // Animate current view out to the left
+        currentEl.style.transform = 'translateX(-100%)';
+        currentEl.style.opacity = '0';
+
+        // Animate target view in from the right
+        targetEl.style.transform = 'translateX(0)';
+        targetEl.style.opacity = '1';
+        
+        // Update current view state
+        currentView = targetViewName;
+        
+        // Post-transition cleanup
+        setTimeout(() => {
+            currentEl.classList.remove('active'); // Remove active status from old view
+            currentEl.style.transform = 'translateX(100%)'; // Reset off-screen to the right
+            currentEl.style.visibility = 'hidden';
+            currentEl.style.transition = 'none';
+            
+            // Handle map on signup view activation
+            if (targetViewName === 'signup') {
+                maybeInitMap();
+            } else if (map) {
+                 // Ensure map resizes correctly if coming back to it, but only if it's initialized
+                 map.invalidateSize();
+            }
+            
+            clearErrors(); // Clear errors when switching forms
+        }, 400); // Should match transition time + a small buffer
+    }, 50); // Small delay to allow style changes to register
 }
-document.addEventListener('DOMContentLoaded', initSwiper);
 
-/* helper to go to slide programmatically */
-function goToSlide(i){
-  if(!swiper) initSwiper();
-  swiper.slideTo(i, 360);
-}
 
-/* wire up clickable links to jump safely (elements are present because script is placed at end) */
-const safeOn = (id, fn) => { const el = document.getElementById(id); if(el) el.addEventListener('click', e => { e.preventDefault(); fn(e); }); };
-safeOn('linkToSignup', ()=> goToSlide(1));
-safeOn('linkToReset', ()=> goToSlide(2));
-safeOn('linkBackToLogin', ()=> goToSlide(0));
+/* NOTE: Link wiring replaced with simple onclick in HTML for easier transition management
+safeOn('linkToSignup', ()=> changeView('signup'));
+safeOn('linkToReset', ()=> changeView('reset'));
+safeOn('linkBackToLogin', ()=> changeView('login'));
+*/
 
-/* ========== LEAFLET MAP (lazy init) ========== */
+
+/* ========== LEAFLET MAP (FIXED updateHiddenInputs) ========== */
 let map = null, marker = null, mapInitialized = false;
 const DEFAULT_LAT = 14.599512, DEFAULT_LNG = 120.984222; // Manila, PH as fallback
 
-/**
- * Initializes the map centered on a given location.
- * @param {number} lat Latitude
- * @param {number} lng Longitude
- */
 function initMap(lat, lng) {
     if (mapInitialized) {
-        // Map is already initialized, just ensure proper sizing and update view/marker
         if (map) {
             map.invalidateSize();
-            map.setView([lat, lng], 18); // Zoom in a bit on the determined location (zoom 13 is good)
+            map.setView([lat, lng], 13); // Zoom level can be adjusted
             if (marker) {
                 marker.setLatLng([lat, lng]);
             } else {
@@ -422,15 +445,9 @@ function initMap(lat, lng) {
     }
 
     mapInitialized = true;
-    
-    // Initialize the map
-    map = L.map('map', { center: [lat, lng], zoom: 13, zoomControl: true }); // Start zoomed in
+    map = L.map('map', { center: [lat, lng], zoom: 13, zoomControl: true });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
-
-    // Add a draggable marker
     marker = L.marker([lat, lng], { draggable: true }).addTo(map);
-
-    // Wire up events
     marker.on('dragend', updateHiddenInputs);
     map.on('click', e => {
         if(marker) marker.setLatLng(e.latlng);
@@ -438,26 +455,37 @@ function initMap(lat, lng) {
         updateHiddenInputs(e.latlng);
     });
 
-    // Set initial hidden inputs
-    updateHiddenInputs(marker.getLatLng());
-
-    // Ensure map tiles render well when slide becomes visible
+    // Pass the actual latlng object, not the result of marker.getLatLng() if it's a new map
+    updateHiddenInputs({lat, lng}); 
     setTimeout(()=> { if(map) map.invalidateSize(); }, 120);
 }
 
-/**
- * Helper to update the hidden lat/lng inputs.
- * @param {L.LatLng} latlng Leaflet LatLng object.
- */
+// FIX: Ensure 'p' is a latlng object, not a Leaflet event object.
 function updateHiddenInputs(latlng) {
-    const p = latlng || marker.getLatLng();
-    document.getElementById('lat').value = p.lat.toFixed(6);
-    document.getElementById('lng').value = p.lng.toFixed(6);
+    let p = latlng;
+
+    // Check if it's a Leaflet Event object (e.g., from marker.on('dragend'))
+    if (p && p.hasOwnProperty('target') && p.target.hasOwnProperty('_latlng')) {
+        p = p.target.getLatLng();
+    } 
+    // Check if it's a Leaflet LatLng object (e.g., from map.on('click'))
+    else if (p && p.hasOwnProperty('lat') && p.hasOwnProperty('lng')) {
+        // p is already the correct LatLng object
+    }
+    // Fallback to current marker position if available
+    else if (marker) {
+        p = marker.getLatLng();
+    }
+
+    if (p && typeof p.lat === 'number' && typeof p.lng === 'number') {
+        document.getElementById('lat').value = p.lat.toFixed(6);
+        document.getElementById('lng').value = p.lng.toFixed(6);
+    } else {
+         // Should not happen with the fix, but good for stability
+         console.warn("Could not determine valid lat/lng for hidden inputs.");
+    }
 }
 
-/**
- * Tries to get user's location and initialize map, falling back to default.
- */
 function getUserLocation() {
     if (navigator.geolocation) {
         console.log("Attempting to get user location...");
@@ -470,7 +498,6 @@ function getUserLocation() {
             },
             (error) => {
                 console.warn(`Geolocation failed: ${error.message}. Falling back to default location.`);
-                // Use default location on failure or permission denial
                 initMap(DEFAULT_LAT, DEFAULT_LNG);
             },
             { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
@@ -481,209 +508,222 @@ function getUserLocation() {
     }
 }
 
-
 function maybeInitMap(){
-  if(!swiper) { setTimeout(maybeInitMap, 200); return; }
-  // only proceed if signup slide is active and map is not yet fully initialized
-  if(swiper.activeIndex !== 1) return;
-  
-  // If the map is not initialized, try to get user location.
-  if (!mapInitialized) {
-      getUserLocation();
-  } else {
-      // Map is initialized, just ensure sizing when slide becomes active
-      setTimeout(()=> { if(map) map.invalidateSize(); }, 80);
-  }
+    // Only proceed if signup view is active and map is not yet fully initialized
+    if(currentView !== 'signup') return;
+    
+    if (!mapInitialized) {
+        getUserLocation();
+    } else {
+        // Map is initialized, just ensure sizing when slide becomes active
+        setTimeout(()=> { if(map) map.invalidateSize(); }, 80);
+    }
 }
 
-/* ========== AUTH ACTIONS ========== */
+
+/* ========== AUTH ACTIONS (RETAINED) ========== */
 function setText(id, txt){ const e=document.getElementById(id); if(e) e.textContent = txt; }
 function clearErrors(){ setText('loginError',''); setText('signupError',''); setText('resetError',''); setText('resetMsg',''); }
 
 /* LOGIN */
 document.getElementById('loginBtn').addEventListener('click', async () => {
-  clearErrors();
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  if(!email || !password){ setText('loginError','Please enter email and password'); return; }
-  try {
-    document.getElementById('loginBtn').disabled = true;
-    await auth.signInWithEmailAndPassword(email, password);
-    window.location.href = 'furboard.html';
-  } catch(err){
-    setText('loginError', err.message || 'Login failed');
-  } finally { document.getElementById('loginBtn').disabled = false; }
+    clearErrors();
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if(!email || !password){ setText('loginError','Please enter email and password'); return; }
+    try {
+        document.getElementById('loginBtn').disabled = true;
+        await auth.signInWithEmailAndPassword(email, password);
+        window.location.href = 'furboard.html';
+    } catch(err){
+        setText('loginError', err.message || 'Login failed');
+    } finally { document.getElementById('loginBtn').disabled = false; }
 });
 
 /* RESET */
 document.getElementById('resetBtn').addEventListener('click', async () => {
-  clearErrors();
-  const email = document.getElementById('resetEmail').value.trim();
-  if(!email){ setText('resetError','Enter an email'); return; }
-  try {
-    document.getElementById('resetBtn').disabled = true;
-    await auth.sendPasswordResetEmail(email);
-    setText('resetMsg','Password reset email sent (check inbox/spam).');
-  } catch(err){
-    setText('resetError', err.message || 'Failed to send reset email');
-  } finally { document.getElementById('resetBtn').disabled = false; }
+    clearErrors();
+    const email = document.getElementById('resetEmail').value.trim();
+    if(!email){ setText('resetError','Enter an email'); return; }
+    try {
+        document.getElementById('resetBtn').disabled = true;
+        await auth.sendPasswordResetEmail(email);
+        setText('resetMsg','Password reset email sent (check inbox/spam).');
+    } catch(err){
+        setText('resetError', err.message || 'Failed to send reset email');
+    } finally { document.getElementById('resetBtn').disabled = false; }
 });
 
 /* SIGNUP */
 document.getElementById('signupBtn').addEventListener('click', async () => {
-  clearErrors();
-  const fullName = document.getElementById('fullName').value.trim();
-  const phoneNumber = document.getElementById('phoneNumber').value.trim();
-  const emailAddress = document.getElementById('emailAddress').value.trim();
-  const facebookLink = document.getElementById('facebookLink').value.trim();
-  const instagramLink = document.getElementById('instagramLink').value.trim();
-  const street = document.getElementById('street').value.trim();
-  const city = document.getElementById('city').value.trim();
-  const province = document.getElementById('province').value.trim();
-  const country = document.getElementById('country').value.trim();
-  const zipcode = document.getElementById('zipcode').value.trim();
-  const lat = document.getElementById('lat').value.trim();
-  const lng = document.getElementById('lng').value.trim();
-  const password = document.getElementById('password').value;
-  const password2 = document.getElementById('password2').value;
+    clearErrors();
+    const fullName = document.getElementById('fullName').value.trim();
+    const phoneNumber = document.getElementById('phoneNumber').value.trim();
+    const emailAddress = document.getElementById('emailAddress').value.trim();
+    const facebookLink = document.getElementById('facebookLink').value.trim();
+    const instagramLink = document.getElementById('instagramLink').value.trim();
+    const street = document.getElementById('street').value.trim();
+    const city = document.getElementById('city').value.trim();
+    const province = document.getElementById('province').value.trim();
+    const country = document.getElementById('country').value.trim();
+    const zipcode = document.getElementById('zipcode').value.trim();
+    const lat = document.getElementById('lat').value.trim();
+    const lng = document.getElementById('lng').value.trim();
+    const password = document.getElementById('password').value;
+    const password2 = document.getElementById('password2').value;
 
-  if(!fullName || !emailAddress || !password || !password2){ setText('signupError','Full name, email and password are required'); return; }
-  if(password.length < 6){ setText('signupError','Password must be at least 6 characters'); return; }
-  if(password !== password2){ setText('signupError','Passwords do not match'); return; }
-
-  try {
+    // --- Client-Side Validation ---
+    if(!fullName || !emailAddress || !password || !password2){ 
+        setText('signupError','Full name, email, and password are required'); 
+        return; 
+    }
+    if(password.length < 6){ 
+        setText('signupError','Password must be at least 6 characters'); 
+        return; 
+    }
+    if(password !== password2){ 
+        setText('signupError','Passwords do not match'); 
+        return; 
+    }
+    // -----------------------------
+    
     document.getElementById('signupBtn').disabled = true;
-    const cred = await auth.createUserWithEmailAndPassword(emailAddress, password);
-    const uid = cred.user.uid;
+    let authCredential = null;
 
-    const profile = {
-      fullName,
-      phoneNumber,
-      emailAddress,
-      facebookLink,
-      instagramLink,
-      address: { street, city, province, country, zipcode },
-      location: { lat: lat ? Number(lat) : null, lng: lng ? Number(lng) : null },
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
+    try {
+        // 1. FIREBASE AUTH: Create User
+        authCredential = await auth.createUserWithEmailAndPassword(emailAddress, password);
+        const uid = authCredential.user.uid;
+        console.log("✅ 1. User created successfully in Firebase Auth. UID:", uid);
 
-    await db.collection('users').doc(uid).set(profile);
-    window.location.href = 'furboard.html';
-  } catch(err) {
-    setText('signupError', err.message || 'Sign up failed');
-  } finally {
-    document.getElementById('signupBtn').disabled = false;
-  }
+        const profile = {
+            fullName,
+            phoneNumber,
+            emailAddress,
+            facebookLink,
+            instagramLink,
+            address: { street, city, province, country, zipcode },
+            location: { lat: lat ? Number(lat) : null, lng: lng ? Number(lng) : null },
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        // 2. FIRESTORE: Save Profile Document
+        await db.collection('users').doc(uid).set(profile);
+        console.log("✅ 2. Profile document saved to Firestore.");
+
+        // 3. SUCCESS: Redirect
+        window.location.href = 'furboard.html';
+
+    } catch(err) {
+        if (authCredential && authCredential.user) {
+            console.error("❌ FIRESTORE WRITE FAILED or other error:", err);
+            setText('signupError', `Profile failed to save: ${err.message}. Deleting user from Auth.`);
+            await authCredential.user.delete();
+            console.log("Cleanup: Orphaned Auth user deleted.");
+            await new Promise(resolve => setTimeout(resolve, 3000));
+        } else {
+            console.error("❌ AUTH FAILED:", err);
+            setText('signupError', err.message || 'Sign up failed due to an unknown error.');
+        }
+
+    } finally {
+        document.getElementById('signupBtn').disabled = false;
+    }
 });
 
 /* clear signup */
 function clearSignupForm(){
-  const ids = ['fullName','phoneNumber','emailAddress','facebookLink','instagramLink','street','city','province','country','zipcode','password','password2'];
-  ids.forEach(i => { const el=document.getElementById(i); if(el) el.value=''; });
-  if(marker){
-    const p = marker.getLatLng();
-    document.getElementById('lat').value = p.lat.toFixed(6);
-    document.getElementById('lng').value = p.lng.toFixed(6);
-  } else { document.getElementById('lat').value = ''; document.getElementById('lng').value = ''; }
+    const ids = ['fullName','phoneNumber','emailAddress','facebookLink','instagramLink','street','city','province','country','zipcode','password','password2'];
+    ids.forEach(i => { const el=document.getElementById(i); if(el) el.value=''; });
+    if(marker){
+        const p = marker.getLatLng();
+        document.getElementById('lat').value = p.lat.toFixed(6);
+        document.getElementById('lng').value = p.lng.toFixed(6);
+    } else { document.getElementById('lat').value = ''; document.getElementById('lng').value = ''; }
 }
 
-/* initialize swiper & optionally map after load; if intro hasn't yet finished, swiper stays locked */
+
+/* ========== PWA/UTILITY (RETAINED) ========== */
+
 window.addEventListener('load', () => {
-  // init swiper (if not already)
-  initSwiper();
-  // if intro already hidden (video ended early), allow swipe
-  if(introEl.classList.contains('hidden')) {
-    try { swiper.allowTouchMove = true; } catch(e){}
-  }
+    // If intro already hidden (video ended early), ensure map logic runs
+    if(introEl.classList.contains('hidden')) {
+        maybeInitMap();
+    }
 });
 
-if  ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js')
-    .then(() => console.log('Service Worker registered'))
-    .catch(err => console.log('Service Worker failed:', err));
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+        .then(() => console.log('Service Worker registered'))
+        .catch(err => console.log('Service Worker failed:', err));
 }
-
 
 let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
+    e.preventDefault();
+    deferredPrompt = e;
 
-  // Create styled install button
-  const btn = document.createElement('button');
-  btn.textContent = 'Install FurTagPH';
-  Object.assign(btn.style, {
-    padding: '12px 20px',
-    border: 'none',
-    borderRadius: '10px',
-    background: 'linear-gradient(90deg,#ff6f61,#ff896f)',
-    color: '#fff',
-    fontSize: '16px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    boxShadow: '0 6px 18px rgba(0,0,0,0.1)',
-    opacity: '0',
-    transition: 'opacity 0.3s ease-in-out'
-  });
+    // Create styled install button
+    const btn = document.createElement('button');
+    btn.textContent = 'Install FurTagPH';
+    Object.assign(btn.style, {
+        padding: '12px 20px', border: 'none', borderRadius: '10px',
+        background: 'linear-gradient(90deg,#ff6f61,#ff896f)', color: '#fff',
+        fontSize: '16px', fontWeight: '600', cursor: 'pointer',
+        boxShadow: '0 6px 18px rgba(0,0,0,0.1)', opacity: '0',
+        transition: 'opacity 0.3s ease-in-out'
+    });
 
-  const container = document.getElementById('installContainer');
-  if (container) {
-    container.appendChild(btn);
-    requestAnimationFrame(() => { btn.style.opacity = '1'; });
-  }
+    const container = document.getElementById('installContainer');
+    if (container) {
+        container.appendChild(btn);
+        requestAnimationFrame(() => { btn.style.opacity = '1'; });
+    }
 
-  btn.addEventListener('click', async () => {
-    btn.disabled = true;
-    deferredPrompt.prompt();
-    const choiceResult = await deferredPrompt.userChoice;
-    console.log('User choice:', choiceResult.outcome);
-    deferredPrompt = null;
-    btn.remove();
-  });
+    btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        deferredPrompt.prompt();
+        const choiceResult = await deferredPrompt.userChoice;
+        console.log('User choice:', choiceResult.outcome);
+        deferredPrompt = null;
+        btn.remove();
+    });
 });
 
 // iOS fallback
-// iOS fallback
 if (isIos() && !isInStandaloneMode()) {
-  const iosPrompt = document.getElementById('iosInstallPrompt');
-  if (iosPrompt) {
-    iosPrompt.style.display = 'block';
+    const iosPrompt = document.getElementById('iosInstallPrompt');
+    if (iosPrompt) {
+        iosPrompt.style.display = 'block';
 
-    // Auto-hide after 8 seconds
-    setTimeout(() => {
-      iosPrompt.style.transition = 'opacity 0.5s ease';
-      iosPrompt.style.opacity = '0';
-      setTimeout(() => iosPrompt.remove(), 500);
-    }, 8000);
-  }
+        // Auto-hide after 8 seconds
+        setTimeout(() => {
+            iosPrompt.style.transition = 'opacity 0.5s ease';
+            iosPrompt.style.opacity = '0';
+            setTimeout(() => iosPrompt.remove(), 500);
+        }, 8000);
+    }
 }
-
-
 
 function isIos() {
-  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
 }
 function isInStandaloneMode() {
-  return ('standalone' in window.navigator) && window.navigator.standalone;
+    return ('standalone' in window.navigator) && window.navigator.standalone;
 }
 
 function togglePassword(inputId, btn) {
-  const input = document.getElementById(inputId);
-  if (input.type === "password") {
-    input.type = "text";
-    btn.textContent = "🙈"; // change icon
-  } else {
-    input.type = "password";
-    btn.textContent = "👁️"; // change icon back
-  }
+    const input = document.getElementById(inputId);
+    if (input.type === "password") {
+        input.type = "text";
+        btn.textContent = "🙈"; 
+    } else {
+        input.type = "password";
+        btn.textContent = "👁️"; 
+    }
 }
-
-
-
-/* NOTE: If you open the file via file:// you may see origin warnings.
-   Serve via a local webserver (python -m http.server or Live Server) for Leaflet and Firebase to behave properly. */
 </script>
 </body>
 </html>
