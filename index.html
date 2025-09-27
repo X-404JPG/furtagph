@@ -1,335 +1,1000 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FurTag — Under Construction</title>
-  <link rel="icon" href="furtagph.png" type="image/png">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background: linear-gradient(135deg, #fdf6f0, #ffe5d4);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      overflow: hidden;
-      position: relative;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FurTagPH — Where Pet Safety Meets Technology</title>
+<meta name="description" content="Smart QR pet tags that bring your pets home safely. Scan. Connect. Reunite." />
 
-    canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 0;
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        brand1: '#ff6f61', // Main Brand Pink/Coral
+        brand2: '#ff896f', // Lighter Brand Color
+        bg: '#fbfbfc', // Light Background
+        muted: '#6b7280', // Muted Gray
+        dark: '#0f172a' // Dark Text
+      },
+      borderRadius: {
+        'card': '18px', // Slightly larger border radius
+        'xl': '1rem',
+        '2xl': '1.5rem',
+      },
+      fontFamily: {
+        cooper: ['"Cooper Hewitt"', 'Arial', 'Helvetica', 'sans-serif'],
+        canva: ['"Canva Sans"', 'Inter', 'system-ui', 'sans-serif']
+      },
+      boxShadow: {
+        // Updated soft shadow for a more modern lift
+        'soft-lg': '0 20px 40px -10px rgba(17,24,39,.08)',
+        'soft': '0 8px 24px rgba(17,24,39,.06)',
+      }
     }
+  }
+}
+</script>
 
-    .card {
-      position: relative;
-      z-index: 1;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(12px);
-      border-radius: 20px;
-      padding: 3rem 2rem;
-      max-width: 500px;
-      width: 90%;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-      text-align: center;
-      animation: fadeInCard 1.5s ease-in-out;
-      transition: box-shadow 0.3s ease, transform 0.3s ease;
-    }
+<link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css" />
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 
-    .card:hover {
-      box-shadow: 0 15px 60px rgba(255,111,97,0.3);
-      transform: translateY(-8px) scale(1.02);
-    }
+<script src="https://unpkg.com/lucide@latest"></script>
 
-    .logo {
-      max-width: 180px;
-      display: block;
-      margin: 0 auto;
-      padding: 10px;
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.2);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15), 0 4px 12px rgba(255,111,97,0.2);
-      transition: transform 0.5s ease, box-shadow 0.5s ease;
-      animation: float 3s ease-in-out infinite;
-    }
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root {
+    --brand-1:#ff6f61;
+    --bg:#fbfbfc;
+    --nav-height:72px;
+  }
+  html, body { height: 100%; margin:0; }
+  body {
+    background: var(--bg);
+    color: #0f172a;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  
+  /* --- MOBILE OPTIMIZATION FIX 1: REMOVE FULL-HEIGHT FOR STANDARD MOBILE SCROLL --- */
+  section.full { 
+    /* Removed min-height: 100svh and scroll-snap attributes */
+    display: grid; 
+    place-items: center; 
+    padding-top: calc(var(--nav-height) + 1.5rem);
+    padding-bottom: 3rem;
+  }
+  
+  .input { 
+    border:1px solid rgba(15,23,42,.1); 
+    border-radius: 12px; 
+    padding: .9rem 1rem; 
+    transition:border .2s; 
+    background-color: white; /* Ensure inputs stand out on bg */
+  }
+  .input:focus { border-color: var(--brand-1); outline: none; }
+  .active {
+    color: var(--brand-1);
+    font-weight: 600;
+  }
+  header, main, section, footer { max-width: 100vw; overflow-x: clip; }
+  [data-aos] { max-width: 100%; }
 
-    .logo:hover {
-      transform: translateY(-10px) scale(1.05);
-      box-shadow: 0 20px 35px rgba(0,0,0,0.2), 0 6px 18px rgba(255,111,97,0.3);
-    }
+  .glass-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(8px); }
 
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
-    }
+  /* Redesign: Active State Border Accent for FAQ (#faq best design) */
+  .accordion[open] {
+      border-left: 4px solid var(--brand-1);
+      box-shadow: 0 12px 30px -10px rgba(255,111,97,.15) !important;
+  }
+  .accordion[open] summary {
+      color: var(--brand-1); /* Highlight text when open */
+  }
 
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 3rem;
-      color: #ff6f61;
-      margin-bottom: 0.5rem;
-      animation: fadeIn 2s ease-in-out;
-    }
 
-    .tagline {
-      font-weight: bold;
-      font-size: 1.2rem;
-      color: #555;
-      margin-bottom: 1rem;
-      animation: fadeIn 2.5s ease-in-out;
+  @media (min-width: 769px) {
+    /* Re-apply full-height on desktop for the visually striking effect */
+    section.full { 
+        min-height: 100vh;
+        scroll-snap-align: start; 
     }
+    main { scroll-snap-type: y mandatory; }
+  }
 
-    .under-construction {
-      margin-top: 0.8rem;
-      font-size: 1.2rem;
-      color: #999;
-      font-style: italic;
-      animation: fadeIn 3s ease-in-out;
-    }
+  /* Make footer take only the space it needs */
+  section#footer { min-height: auto !important; margin-bottom: 0; padding-top: 1.5rem; padding-bottom: 1.5rem; }
 
-    #countdown {
-      font-weight: bold;
-      background: linear-gradient(90deg, #ff6f61, #ffa07a);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      font-size: 1.2rem;
-      margin-top: 1rem;
-      animation: fadeIn 3.5s ease-in-out;
-    }
-
-    p {
-      margin: 0.5rem auto 1rem;
-      line-height: 1.6;
-      font-size: 1.1rem;
-      color: #444;
-    }
-
-    .contact {
-      margin-top: 2rem;
-      font-size: 1rem;
-    }
-
-    .contact a {
-      color: #ff6f61;
-      text-decoration: none;
-      font-weight: bold;
-      transition: all 0.3s ease;
-    }
-
-    .contact a:hover {
-      text-decoration: underline;
-      color: #e0554f;
-    }
-
-    footer {
-      margin-top: 3rem;
-      font-size: 0.85rem;
-      color: #888;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes fadeInCard {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    @media (max-width: 600px) {
-      h1 { font-size: 2.2rem; }
-      .tagline { font-size: 1rem; }
-      .logo { max-width: 130px; }
-      .card { padding: 2rem 1.5rem; }
-    }
-  </style>
+</style>
 </head>
-<body>
-  <canvas id="particle-canvas"></canvas>
+<body class="font-canva text-dark">
 
-  <div class="card" id="card">
-    <img src="furtagph.png" alt="FurTag Logo" class="logo" id="logo">
-    <p class="under-construction">🚧 Our official website is currently under construction 🚧</p>
-    <p>We’re working hard to bring you something amazing. Stay tuned!</p>
-    <p id="countdown"></p>
-    <div class="contact">
-      <p>In the meantime, you can reach us at:</p>
-      <p>Email: <a href="mailto:jp@furtagph.com">admin@furtagph.com</a></p>
+<header id="nav" 
+  class="fixed inset-x-0 top-0 z-50 h-[var(--nav-height)] flex items-center 
+         glass-card shadow-soft overflow-x-hidden">
+  <div class="w-full max-w-7xl mx-auto flex items-center justify-between px-4 overflow-hidden">
+    <a href="#home" class="flex items-center gap-2 flex-shrink max-w-[70%] overflow-hidden">
+      <div class="h-11 w-auto max-w-[45px] p-1.5 bg-brand1 rounded-lg grid place-items-center flex-shrink-0">
+        <img src="assets/2.png" alt="FurTagPH Logo" class="h-full w-full object-contain" />
+      </div>
+      <span class="font-cooper text-xl font-bold tracking-tight truncate">FurtagPH</span>
+    </a>
+
+    <nav class="hidden md:flex flex-wrap items-center gap-6 text-sm min-w-0 font-medium">
+      <a href="#how" class="nav-link hover:text-brand1 transition" data-sections="#how,#owners,#finders">How It Works</a>
+      <a href="#about" class="nav-link hover:text-brand1 transition" data-sections="#about,#counter,#gallery,#reviews,#partners">About</a>
+      <a href="#faq" class="nav-link hover:text-brand1 transition" data-sections="#faq">FAQs</a>
+      <a href="#contact" class="nav-link hover:text-brand1 transition" data-sections="#contact,#footer">Contact Us</a>
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <a href="#newsletter"
+        class="hidden sm:block px-4 py-2 rounded-xl bg-brand2 text-white text-sm shadow-soft transition-all hover:bg-brand1">
+        Order Now!
+      </a>
+      <button id="menuBtn" class="md:hidden p-2 flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 transition">
+        <i data-lucide="menu" class="w-6 h-6 block"></i>
+      </button>
     </div>
+  </div>
+</header>
 
-    <footer>
-      © 2025 FurTag. All rights reserved.
-    </footer>
+<main>
+  <div id="mobileMenu" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+    <div id="drawer"
+      class="absolute left-0 top-0 h-full w-[min(16rem,80vw)] bg-white shadow-lg p-6 flex flex-col gap-4 overflow-y-auto z-50
+      -translate-x-full transition-transform duration-300">
+      <button id="closeMenu" class="self-end p-2"><i data-lucide="x"></i></button>
+      <a href="#how" data-sections="#how,#owners,#finders" class="nav-link hover:text-brand1 font-medium">How It Works</a>
+      <a href="#about" data-sections="#about,#counter,#gallery,#reviews,#partners" class="nav-link hover:text-brand1 font-medium">About</a>
+      <a href="#faq" data-sections="#faq" class="nav-link hover:text-brand1 font-medium">FAQs</a>
+      <a href="#contact" data-sections="#contact,#footer" class="nav-link hover:text-brand1 font-medium">Contact Us</a>
+      <a href="#newsletter" class="mt-4 px-4 py-2 rounded-xl bg-brand1 text-white text-center shadow-soft">Order Now</a>
+    </div>
   </div>
 
-  <script>
-    const canvas = document.getElementById('particle-canvas');
-    const ctx = canvas.getContext('2d');
-    let particlesArray = [];
-    let burstParticles = [];
-    let mouse = { x: null, y: null };
-    const gradientColors = ['#ff6f61', '#ffa07a', '#ffd1b3'];
-    const card = document.getElementById('card');
-    const logo = document.getElementById('logo');
+  <section id="home" class="full relative pt-[var(--nav-height)]">
+    <div class="absolute inset-0 w-full h-full object-cover bg-brand2/20"></div> 
+    <div class="absolute inset-0 bg-gradient-to-b from-dark/10 to-dark/40"></div>
+    <div class="relative z-10 max-w-6xl mx-auto px-4 py-16 grid lg:grid-cols-12 gap-10 items-center">
+      
+      <div class="lg:col-span-7 text-white text-center lg:text-left" data-aos="fade-right">
+        <h1 class="font-cooper text-5xl md:text-5xl font-extrabold drop-shadow-lg leading-tight">
+          WHEN PET SAFETY 
+          <br class="hidden sm:inline" />
+          MEETS TECHNOLOGY
+        </h1>
+        <p class="mt-6 text-xl md:text-2xl font-light opacity-95 drop-shadow-md max-w-xl lg:max-w-none mx-auto lg:mx-0">
+          <strong>FurTagPH</strong> uses Smart QR technology to instantly connect lost pets with their families. Peace of mind starts here.
+        </p>
+        <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start" data-aos="fade-up" data-aos-delay="200">
+          <a href="#newsletter" class="px-8 py-4 rounded-full bg-brand1 text-white text-lg font-semibold shadow-soft-lg transition-all hover:bg-brand2 hover:scale-[1.02]">
+            Order Now!
+          </a>
+          <a href="#gallery" class="px-8 py-4 rounded-full bg-white text-dark text-lg font-semibold shadow-soft-lg transition-all hover:bg-gray-100 hover:scale-[1.02]">
+            View Our Tags
+          </a>
+        </div>
+      </div>
+      
+      <div class="lg:col-span-5 flex justify-center" data-aos="fade-left" data-aos-delay="400">
+          <img src="assets/dog5.png" alt="FurTagPH product on a collar" 
+               class="w-full max-w-sm lg:max-w-none transform rotate-3 scale-105 shadow-soft-lg rounded-2xl border-4 border-white/50" />
+      </div>
+      
+      <div class="absolute bottom-6 left-1/2 -translate-x-1/2 text-white animate-bounce hidden sm:block"><i data-lucide="chevron-down" class="w-8 h-8"></i></div>
+    </div>
+  </section>
+  
+  ---
 
-    function getElementRect(el) {
-      return el.getBoundingClientRect();
-    }
+<section id="how" class="full bg-white">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="text-center mb-16" data-aos="fade-up">
+            <span class="text-brand1 font-semibold uppercase tracking-widest text-sm">Fast Reunions</span>
+            <h2 class="font-cooper text-4xl md:text-6xl font-bold mt-2">The 3-Step Safety Net</h2>
+            <p class="mt-3 text-muted text-lg max-w-xl mx-auto">Simple, reliable, and instant—the best chance for a quick return. See how <strong>FurTagPH</strong> works in just three steps.</p>
+        </div>
 
-    class Particle {
-      constructor(x = Math.random() * canvas.width, y = Math.random() * canvas.height) {
-        this.x = x;
-        this.y = y;
-        this.size = Math.random() * 3 + 1;
-        this.speedX = (Math.random() - 0.5) * 0.5;
-        this.speedY = (Math.random() - 0.5) * 0.5;
-        this.opacity = Math.random();
-        this.color = gradientColors[Math.floor(Math.random() * gradientColors.length)];
-      }
+        <div class="grid md:grid-cols-3 gap-8 md:gap-12 lg:gap-16">
 
-      draw() {
-        ctx.beginPath();
-        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 4);
-        gradient.addColorStop(0, `${this.color}aa`);
-        gradient.addColorStop(0.5, `${this.color}55`);
-        gradient.addColorStop(1, `${this.color}00`);
-        ctx.fillStyle = gradient;
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
+            <div class="p-6 md:p-8 bg-bg rounded-card shadow-soft transition-all hover:shadow-soft-lg hover:scale-[1.02] border-t-4 border-brand1/0 hover:border-brand1" data-aos="fade-up">
+                <div class="flex items-center gap-4">
+                    <div class="h-14 w-14 rounded-full bg-brand1 text-white grid place-items-center flex-shrink-0 shadow-soft-lg">
+                        <i data-lucide="shopping-cart" class="w-7 h-7"></i>
+                    </div>
+                    <span class="font-cooper text-6xl font-extrabold text-brand1/30 leading-none">01</span>
+                </div>
+                
+                <h3 class="font-cooper text-3xl font-bold mt-6">Get & Activate</h3>
+                <p class="mt-3 text-muted text-base">Purchase your unique <strong>FurTagPH</strong> QR tag and activate the pet's profile online. This is the first step to peace of mind.</p>
+                <a href="#gallery" class="mt-4 text-brand1 font-medium flex items-center gap-1 hover:gap-2 transition-all">
+                    View Tags <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
+            </div>
 
-      update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
+            <div class="p-6 md:p-8 bg-bg rounded-card shadow-soft transition-all hover:shadow-soft-lg hover:scale-[1.02] border-t-4 border-brand1/0 hover:border-brand1" data-aos="fade-up" data-aos-delay="150">
+                <div class="flex items-center gap-4">
+                    <div class="h-14 w-14 rounded-full bg-brand1 text-white grid place-items-center flex-shrink-0 shadow-soft-lg">
+                        <i data-lucide="scan-line" class="w-7 h-7"></i>
+                    </div>
+                    <span class="font-cooper text-6xl font-extrabold text-brand1/30 leading-none">02</span>
+                </div>
+                
+                <h3 class="font-cooper text-3xl font-bold mt-6">Found & Scanned</h3>
+                <p class="mt-3 text-muted text-base">A friendly finder uses their phone to <strong>scan the tag</strong>. No special app needed, ensuring the fastest path to help.</p>
+                <a href="#finders" class="mt-4 text-brand1 font-medium flex items-center gap-1 hover:gap-2 transition-all">
+                    See Finder View <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
+            </div>
 
-        if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
-        if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            <div class="p-6 md:p-8 bg-bg rounded-card shadow-soft transition-all hover:shadow-soft-lg hover:scale-[1.02] border-t-4 border-brand1/0 hover:border-brand1" data-aos="fade-up" data-aos-delay="300">
+                <div class="flex items-center gap-4">
+                    <div class="h-14 w-14 rounded-full bg-brand1 text-white grid place-items-center flex-shrink-0 shadow-soft-lg">
+                        <i data-lucide="bell-ring" class="w-7 h-7"></i>
+                    </div>
+                    <span class="font-cooper text-6xl font-extrabold text-brand1/30 leading-none">03</span>
+                </div>
+                
+                <h3 class="font-cooper text-3xl font-bold mt-6">Instant Connect</h3>
+                <p class="mt-3 text-muted text-base">The finder views your profile and contacts you instantly via phone or email. <strong>Reunion success!</strong></p>
+                <a href="#owners" class="mt-4 text-brand1 font-medium flex items-center gap-1 hover:gap-2 transition-all">
+                    Owner Alerts <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
+            </div>
 
-        this.opacity += (Math.random() - 0.5) * 0.05;
-        if (this.opacity < 0.2) this.opacity = 0.2;
-        if (this.opacity > 0.8) this.opacity = 0.8;
+        </div>
+    </div>
+  </section>
+  
+  ---
 
-        // Mouse hover attraction
-        if (mouse.x && mouse.y) {
-          const dx = mouse.x - this.x;
-          const dy = mouse.y - this.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < 120) {
-            const angle = Math.atan2(dy, dx);
-            const force = (120 - distance) / 80;
-            this.x += Math.cos(angle) * force;
-            this.y += Math.sin(angle) * force;
-          }
-        }
+<section id="owners" class="full bg-[var(--bg)]">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="grid lg:grid-cols-12 gap-12 items-center">
+        
+        <div class="lg:col-span-6" data-aos="fade-right">
+          <span class="text-brand1 font-semibold uppercase tracking-widest text-sm">Owner Perks</span>
+          <h2 class="font-cooper text-4xl md:text-5xl font-bold mt-2">Control Your Pet's Safety Profile</h2>
+          <p class="mt-5 text-muted text-lg">Manage all the critical details that get your pet home quickly, all from your dedicated FurBoard dashboard.</p>
+          
+          <ul class="mt-8 space-y-6">
+            <li class="flex items-start gap-4 p-3 rounded-lg bg-white shadow-sm border border-gray-100">
+              <div class="p-2 rounded-full bg-brand1/10 text-brand1 flex-shrink-0"><i data-lucide="id-card" class="w-5 h-5"></i></div>
+              <div>
+                <strong class="text-lg">Dynamic Profiles</strong>
+                <p class="text-muted text-sm">Update medical notes, allergies, and temporary sitters anytime, instantly.</p>
+              </div>
+            </li>
+            <li class="flex items-start gap-4 p-3 rounded-lg bg-white shadow-sm border border-gray-100">
+              <div class="p-2 rounded-full bg-brand1/10 text-brand1 flex-shrink-0"><i data-lucide="bell" class="w-5 h-5"></i></div>
+              <div>
+                <strong class="text-lg">Location Alert</strong>
+                <p class="text-muted text-sm">Get an <strong>immediate email alert</strong> with the finder's location when your tag is scanned.</p>
+              </div>
+            </li>
+            <li class="flex items-start gap-4 p-3 rounded-lg bg-white shadow-sm border border-gray-100">
+              <div class="p-2 rounded-full bg-brand1/10 text-brand1 flex-shrink-0"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
+              <div>
+                <strong class="text-lg">Total Privacy</strong>
+                <p class="text-muted text-sm">Your private contact details are <strong>only shared</strong> after a scan, when they are needed most.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+        
+        <div class="lg:col-span-6 relative" data-aos="fade-left">
+            <div class="p-6 bg-white rounded-3xl shadow-soft-lg border-2 border-brand1/30 relative">
+                <img src="assets/profile.png" alt="Phone showing location alert" 
+                     class="w-full h-auto rounded-xl shadow-inner" />
+                
+                <div class="absolute bottom-[-1.5rem] right-4 p-4 rounded-xl bg-brand1 text-white shadow-soft-lg">
+                    <p class="font-bold text-sm flex items-center gap-2"><i data-lucide="zap" class="w-4 h-4"></i> Instant Notification!</p>
+                    <p class="font-bold text-sm flex items-center gap-2"><i data-lucide="zap" class="w-4 h-4"></i> Get an alert showing the GPS location where your pet's tag was scanned.</p>
+                </div>
+            </div>
+            
+            
+        </div>
+        
+      </div>
+    </div>
+</section>
+  
+  ---
 
-        // Bounce off card
-        const cardRect = getElementRect(card);
-        if (this.x > cardRect.left && this.x < cardRect.right &&
-            this.y > cardRect.top && this.y < cardRect.bottom) {
-          if (this.x - this.speedX < cardRect.left || this.x - this.speedX > cardRect.right) this.speedX *= -1;
-          if (this.y - this.speedY < cardRect.top || this.y - this.speedY > cardRect.bottom) this.speedY *= -1;
-        }
+  <section id="finders" class="full bg-white">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="grid md:grid-cols-12 gap-12 items-center">
+        <div class="md:col-span-5" data-aos="fade-right">
+          <span class="text-brand1 font-semibold uppercase tracking-widest text-sm">Finder Experience</span>
+          <h2 class="font-cooper text-4xl md:text-5xl font-bold mt-2">Just Scan to Help Reunite</h2>
+          <p class="mt-5 text-muted text-lg">No downloads, no logins, no stress. A simple scan gives you all the tools needed to contact the owner right away.</p>
+          
+          <ol class="mt-8 space-y-4 list-none">
+            <li class="flex items-center gap-4 text-lg"><span class="h-8 w-8 rounded-full bg-brand1 text-white grid place-items-center font-bold flex-shrink-0">1</span>Scan with any phone camera.</li>
+            <li class="flex items-center gap-4 text-lg"><span class="h-8 w-8 rounded-full bg-brand1 text-white grid place-items-center font-bold flex-shrink-0">2</span>View critical pet info (meds, allergies).</li>
+            <li class="flex items-center gap-4 text-lg"><span class="h-8 w-8 rounded-full bg-brand1 text-white grid place-items-center font-bold flex-shrink-0">3</span><strong>Call or message</strong>the owner directly.</li>
+          </ol>
+        </div>
+        
+        <div class="md:col-span-7" data-aos="fade-left">
+          <div class="rounded-3xl overflow-hidden shadow-soft-lg relative bg-white border-8 border-dark/90 p-2 max-w-sm mx-auto">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 h-4 w-20 bg-dark rounded-b-md z-10"></div>
+            <img src="assets/notif2.png" alt="Finder's view of pet profile" class="w-full h-auto rounded-xl" />
+          </div>
+          <p class="mt-4 text-center text-sm text-muted">A clear, immediate profile gives the finder everything they need.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  ---
 
-        // Bounce off logo
-        const logoRect = getElementRect(logo);
-        if (this.x > logoRect.left && this.x < logoRect.right &&
-            this.y > logoRect.top && this.y < logoRect.bottom) {
-          if (this.x - this.speedX < logoRect.left || this.x - this.speedX > logoRect.right) this.speedX *= -1;
-          if (this.y - this.speedY < logoRect.top || this.y - this.speedY > logoRect.bottom) this.speedY *= -1;
-        }
-      }
-    }
+  <section id="about" class="full bg-[var(--bg)]">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="grid lg:grid-cols-2 gap-12 items-start">
+        <div data-aos="fade-right">
+          <span class="text-brand1 font-semibold uppercase tracking-widest text-sm">Our Story</span>
+          <h2 class="font-cooper text-4xl md:text-5xl font-bold mt-2">Driven by Compassion, Built with Tech.</h2>
+          <p class="mt-5 text-muted text-lg">Our mission is simple: to keep pets safe and give owners peace of mind by connecting lost pets with their families through smart, affordable, and reliable QR technology.</p>
+          
+          <div class="mt-10">
+            <h3 class="font-cooper text-2xl font-semibold mb-4">Our Core Values</h3>
+            <ul class="grid sm:grid-cols-2 gap-5">
+              <li class="p-5 rounded-card bg-white shadow-soft transition-all hover:shadow-soft-lg border-l-4 border-brand1">
+                <i data-lucide="heart" class="w-6 h-6 text-brand1 mb-2"></i>
+                <strong class="text-dark">Compassion</strong>
+                <p class="text-sm text-muted mt-1">Pets are family. Their safety is our priority.</p>
+              </li>
+              <li class="p-5 rounded-card bg-white shadow-soft transition-all hover:shadow-soft-lg border-l-4 border-brand1">
+                <i data-lucide="zap" class="w-6 h-6 text-brand1 mb-2"></i>
+                <strong class="text-dark">Innovation</strong>
+                <p class="text-sm text-muted mt-1">Simple, modern, and effective solutions.</p>
+              </li>
+              <li class="p-5 rounded-card bg-white shadow-soft transition-all hover:shadow-soft-lg border-l-4 border-brand1">
+                <i data-lucide="lock" class="w-6 h-6 text-brand1 mb-2"></i>
+                <strong class="text-dark">Trust</strong>
+                <p class="text-sm text-muted mt-1">Reliable service and data security.</p>
+              </li>
+              <li class="p-5 rounded-card bg-white shadow-soft transition-all hover:shadow-soft-lg border-l-4 border-brand1">
+                <i data-lucide="users" class="w-6 h-6 text-brand1 mb-2"></i>
+                <strong class="text-dark">Accessibility</strong>
+                <p class="text-sm text-muted mt-1">Affordable protection for every pet owner.</p>
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        <div data-aos="fade-left" class="rounded-3xl overflow-hidden shadow-soft-lg h-full max-h-[600px] flex items-center justify-center">
+          <img src="assets/group.png" alt="FurTagPH Team" class="w-full h-auto object-cover bg-white" />
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  ---
 
-    class BurstParticle extends Particle {
-      constructor(x, y) {
-        super(x, y);
-        this.size = Math.random() * 4 + 2;
-        const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 3 + 1;
-        this.speedX = Math.cos(angle) * speed;
-        this.speedY = Math.sin(angle) * speed;
-        this.life = 50 + Math.random() * 30;
-      }
+  <section id="counter" class="full bg-white">
+    <div class="max-w-5xl mx-auto px-4 text-center">
+      <h2 class="font-cooper text-4xl md:text-5xl font-bold" data-aos="fade-up">A Growing Community of Safe Pets</h2>
+      <p class="mt-3 text-muted text-lg" data-aos="fade-up" data-aos-delay="100">Every scan and tag activation is a testament to our mission.</p>
+      <div class="mt-12" data-aos="zoom-in" data-aos-delay="200">
+        <div class="inline-flex flex-col items-center justify-center px-12 py-10 rounded-3xl bg-brand1/10 border-4 border-brand1/30 shadow-soft-lg">
+          <span id="petsCount" class="font-cooper text-8xl md:text-9xl font-extrabold text-brand1 leading-none">0</span>
+          <span class="text-2xl text-dark mt-2 font-medium">Pets Protected</span>
+        </div>
+      </div>
+      <p id="countStatus" class="mt-5 text-sm text-muted"></p>
+    </div>
+  </section>
+  
+  ---
 
-      update() {
-        super.update();
-        this.life--;
-      }
-    }
+  <section id="gallery" class="full bg-[var(--bg)]">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="text-center mb-12" data-aos="fade-up">
+        <span class="text-brand1 font-semibold uppercase tracking-widest text-sm">Our Gear & Pricing</span>
+        <h2 class="font-cooper text-4xl md:text-5xl font-bold mt-2">Choose the Best Tag for Your Pet</h2>
+        <p class="mt-3 text-muted text-lg">One-time purchase. Lifetime peace of mind. No subscription fees.</p>
+      </div>
+      <div class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" data-aos="fade-up" data-aos-delay="100">
+        
+        <div class="p-6 rounded-card bg-brand1 text-white shadow-soft-lg transition-all hover:scale-[1.03] transform border-4 border-brand2 group cursor-pointer">
+          <div class="text-xs font-bold uppercase tracking-widest bg-white text-brand1 px-3 py-1 rounded-full inline-block mb-3">⭐ BEST SELLER</div>
+          <div class="h-40 overflow-hidden rounded-lg bg-white grid place-items-center">
+            <img src="assets/furtagph.png" alt="Classic QR Tag" class="w-3/4 h-3/4 object-contain" />
+          </div>
+          <h4 class="mt-4 font-semibold text-2xl">Classic QR Tag</h4>
+          <p class="text-lg font-bold mt-1">₱599.00</p>
+          <ul class="mt-3 space-y-1 text-sm font-light opacity-90">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-white"></i>Durable Polymer (Waterproof)</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-white"></i>Standard Size (1.25")</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-white"></i>Lifetime Profile Access</li>
+          </ul>
+          <a href="#contact" class="mt-5 inline-block w-full py-3 rounded-xl bg-white text-brand1 font-semibold text-lg shadow-soft hover:bg-gray-100 text-center">
+              Buy Now
+          </a>
+        </div>
+        
+        <div class="p-6 rounded-card bg-white shadow-soft transition-all hover:shadow-soft-lg group cursor-pointer">
+          <span class="text-xs font-bold uppercase tracking-widest text-brand1 block mb-3">Premium</span>
+          <div class="h-40 overflow-hidden rounded-lg bg-gray-100 grid place-items-center">
+            <img src="assets/furtagph-metal.png" alt="Metallic Edition" class="w-3/4 h-3/4 object-contain" />
+          </div>
+          <h4 class="mt-4 font-semibold text-2xl">Metallic Edition</h4>
+          <p class="text-lg font-bold mt-1 text-dark">₱999.00</p>
+          <ul class="mt-3 space-y-1 text-sm text-muted">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand1"></i>Stainless Steel (Scratch-Resistant)</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand1"></i>Standard Size (1.25")</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand1"></i>Lifetime Profile Access</li>
+          </ul>
+          <a href="#contact" class="mt-5 inline-block w-full py-3 rounded-xl bg-brand1 text-white font-semibold text-lg shadow-soft hover:bg-brand2 transition-all text-center">
+              Buy Now
+          </a>
+        </div>
+        
+        <div class="p-6 rounded-card bg-white shadow-soft transition-all hover:shadow-soft-lg group cursor-pointer">
+          <span class="text-xs font-bold uppercase tracking-widest text-brand1 block mb-3">Utility</span>
+          <div class="h-40 overflow-hidden rounded-lg bg-gray-100 grid place-items-center">
+            <img src="assets/furtagph-glow.png" alt="Glow-in-the-Dark" class="w-3/4 h-3/4 object-contain" />
+          </div>
+          <h4 class="mt-4 font-semibold text-2xl">Glow Tag</h4>
+          <p class="text-lg font-bold mt-1 text-dark">₱699.00</p>
+          <ul class="mt-3 space-y-1 text-sm text-muted">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand1"></i>Glow-in-the-Dark Rim</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand1"></i>Standard Size (1.25")</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand1"></i>Lifetime Profile Access</li>
+          </ul>
+          <a href="#contact" class="mt-5 inline-block w-full py-3 rounded-xl bg-brand1 text-white font-semibold text-lg shadow-soft hover:bg-brand2 transition-all text-center">
+              Buy Now
+          </a>
+        </div>
+        
+        <div class="p-6 rounded-card bg-white shadow-soft transition-all hover:shadow-soft-lg group cursor-pointer">
+          <span class="text-xs font-bold uppercase tracking-widest text-brand1 block mb-3">Small Pets</span>
+          <div class="h-40 overflow-hidden rounded-lg bg-gray-100 grid place-items-center">
+            <img src="assets/furtagph-mini.png" alt="Mini Tag" class="w-3/4 h-3/4 object-contain" />
+          </div>
+          <h4 class="mt-4 font-semibold text-2xl">Mini Tag</h4>
+          <p class="text-lg font-bold mt-1 text-dark">₱599.00</p>
+          <ul class="mt-3 space-y-1 text-sm text-muted">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand1"></i>Lightweight & Discreet</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand1"></i>Mini Size (0.75")</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand1"></i>Lifetime Profile Access</li>
+          </ul>
+          <a href="#contact" class="mt-5 inline-block w-full py-3 rounded-xl bg-brand1 text-white font-semibold text-lg shadow-soft hover:bg-brand2 transition-all text-center">
+              Buy Now
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  ---
 
-    function init() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      particlesArray = [];
-      const numberOfParticles = Math.floor(canvas.width / 8);
-      for (let i = 0; i < numberOfParticles; i++) {
-        particlesArray.push(new Particle());
-      }
-    }
-
-    function animate() {
-      ctx.fillStyle = 'rgba(255,255,255,0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      particlesArray.forEach(p => { p.update(); p.draw(); });
-      burstParticles.forEach((p, index) => {
-        p.update();
-        p.draw();
-        if (p.life <= 0) burstParticles.splice(index, 1);
-      });
-
-      requestAnimationFrame(animate);
-    }
-
-    window.addEventListener('resize', init);
-    window.addEventListener('mousemove', (e) => { 
-      mouse.x = e.x; 
-      mouse.y = e.y;
-      for(let i = 0; i < 2; i++) {
-        burstParticles.push(new BurstParticle(e.x, e.y));
-      }
-    });
-    window.addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
+<section id="reviews" class="full bg-bg py-20">
+  <div class="max-w-7xl mx-auto px-4">
     
-    window.addEventListener('click', (e) => {
-      for (let i = 0; i < 15; i++) {
-        burstParticles.push(new BurstParticle(e.x, e.y));
+    <div class="text-center mb-16" data-aos="fade-up">
+      <span class="text-brand1 font-semibold uppercase tracking-widest text-sm">Real Stories, Real Safety</span>
+      <h2 class="font-cooper text-4xl md:text-5xl font-bold mt-2">Hear It From Our FurTagPH Community</h2>
+    </div>
+    
+    <div class="mb-20 grid lg:grid-cols-3 gap-8">
+      <div class="lg:col-span-2 p-10 md:p-12 rounded-2xl bg-white shadow-soft-lg flex items-start" data-aos="fade-up">
+        <i data-lucide="quote" class="w-10 h-10 text-brand1 mr-4 mt-2 hidden sm:block"></i>
+        <div>
+            <div class="flex items-center gap-1 mb-4 text-yellow-500">
+                <i data-lucide="star" class="w-5 h-5 fill-yellow-500"></i>
+                <i data-lucide="star" class="w-5 h-5 fill-yellow-500"></i>
+                <i data-lucide="star" class="w-5 h-5 fill-yellow-500"></i>
+                <i data-lucide="star" class="w-5 h-5 fill-yellow-500"></i>
+                <i data-lucide="star" class="w-5 h-5 fill-yellow-500"></i>
+            </div>
+            <p class="text-2xl md:text-3xl font-bold italic leading-tight text-dark">
+                “My heart stopped when my cat slipped out, but thanks to the FurTag's instant notification and contact info, a neighbor called me in less than 30 minutes. **It's not just a tag; it's instant communication.**”
+            </p>
+            <footer class="mt-6 font-canva font-bold text-lg text-dark flex items-center gap-3 pt-4 border-t border-gray-100">
+                <i data-lucide="paw-print" class="w-5 h-5 text-brand1"></i> Maria G. & Shadow (Manila, PH)
+            </footer>
+        </div>
+      </div>
+      
+      <div class="lg:col-span-1 hidden lg:flex items-center justify-center p-8 rounded-2xl bg-brand2/10 shadow-soft" data-aos="fade-up" data-aos-delay="100">
+          <div class="text-center">
+             <i data-lucide="bell-ring" class="w-12 h-12 text-brand1 mx-auto mb-4"></i>
+             <h4 class="font-cooper text-2xl font-bold text-dark">Ready for Peace of Mind?</h4>
+             <p class="text-muted mt-2">Join thousands of pet owners trusting FurTagPH.</p>
+             <a href="#pricing" class="mt-4 inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl shadow-sm text-white bg-brand1 hover:bg-brand2 transition">
+                Order Your Tag
+             </a>
+          </div>
+      </div>
+    </div>
+    
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      
+      <blockquote class="p-6 rounded-xl bg-white shadow-soft border-t-4 border-brand1/50" data-aos="fade-up" data-aos-delay="200">
+        <p class="text-base italic text-dark">“The user profile setup was a breeze. I uploaded all his medical info in minutes. It's truly comprehensive and easy to update.”</p>
+        <footer class="mt-4 font-semibold text-sm text-dark flex items-center gap-2 pt-3 border-t border-gray-100">
+          <i data-lucide="user-circle" class="w-4 h-4 text-brand1"></i> Michael T. & Coco
+        </footer>
+      </blockquote>
+      
+      <blockquote class="p-6 rounded-xl bg-white shadow-soft border-t-4 border-brand1/50" data-aos="fade-up" data-aos-delay="300">
+        <p class="text-base italic text-dark">“Finally, a tag that doesn't rely on batteries or microchip scanners. Any smartphone can scan it, which is the key to a quick reunion!”</p>
+        <footer class="mt-4 font-semibold text-sm text-dark flex items-center gap-2 pt-3 border-t border-gray-100">
+          <i data-lucide="user-circle" class="w-4 h-4 text-brand1"></i> Dr. Reyes (Vet Tech)
+        </footer>
+      </blockquote>
+      
+      <blockquote class="p-6 rounded-xl bg-white shadow-soft border-t-4 border-brand1/50" data-aos="fade-up" data-aos-delay="400">
+        <p class="text-base italic text-dark">“My favorite feature is the ability to temporarily mark him as 'Missing.' It gives anyone who scans it instant, critical instructions.”</p>
+        <footer class="mt-4 font-semibold text-sm text-dark flex items-center gap-2 pt-3 border-t border-gray-100">
+          <i data-lucide="user-circle" class="w-4 h-4 text-brand1"></i> Jess A. & Bolt
+        </footer>
+      </footer>
+      
+    </div>
+    
+    <hr class="border-t border-gray-100 mt-20 mb-12">
+    
+    <div id="partners" class="text-center" data-aos="fade-up">
+      <h3 class="font-cooper text-3xl font-bold">Trusted by Pet Professionals</h3>
+      <div class="mt-8 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-6 items-center">
+        <div class="p-4 rounded-xl bg-white shadow-soft grid place-items-center h-20 opacity-60 hover:opacity-100 transition"><i data-lucide="heart-handshake" class="h-10 w-10 text-gray-400"></i></div>
+        <div class="p-4 rounded-xl bg-white shadow-soft grid place-items-center h-20 opacity-60 hover:opacity-100 transition"><i data-lucide="briefcase" class="h-10 w-10 text-gray-400"></i></div>
+        <div class="p-4 rounded-xl bg-white shadow-soft grid place-items-center h-20 opacity-60 hover:opacity-100 transition"><i data-lucide="store" class="h-10 w-10 text-gray-400"></i></div>
+        <div class="p-4 rounded-xl bg-white shadow-soft grid place-items-center h-20 opacity-60 hover:opacity-100 transition"><i data-lucide="badge-check" class="h-10 w-10 text-gray-400"></i></div>
+        <div class="p-4 rounded-xl bg-white shadow-soft grid place-items-center h-20 opacity-60 hover:opacity-100 transition"><i data-lucide="shield" class="h-10 w-10 text-gray-400"></i></div>
+        <div class="p-4 rounded-xl bg-white shadow-soft grid place-items-center h-20 opacity-60 hover:opacity-100 transition"><i data-lucide="bone" class="h-10 w-10 text-gray-400"></i></div>
+      </div>
+    </div>
+  </div>
+</section>
+  
+  ---
+
+  <section id="faq" class="full bg-[var(--bg)]">
+    <div class="max-w-5xl mx-auto px-4">
+      <div class="text-center mb-12" data-aos="fade-up">
+        <span class="text-brand1 font-semibold uppercase tracking-widest text-sm">Questions?</span>
+        <h2 class="font-cooper text-4xl md:text-5xl font-bold mt-2">Frequently Asked Questions</h2>
+      </div>
+      <div class="space-y-4" data-aos="fade-up" data-aos-delay="100">
+        <details class="p-6 rounded-card bg-white shadow-soft border border-gray-100 accordion transition-all">
+          <summary class="font-semibold text-lg cursor-pointer flex justify-between items-center pr-2">
+            Do I need an app to use FurTagPH?
+            <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300"></i>
+          </summary>
+          <p class="mt-4 text-muted border-t pt-4">No app needed. Any smartphone camera can scan the QR code and open the pet profile instantly—making it easy for anyone to help.</p>
+        </details>
+        <details class="p-6 rounded-card bg-white shadow-soft border border-gray-100 accordion transition-all">
+          <summary class="font-semibold text-lg cursor-pointer flex justify-between items-center pr-2">
+            What happens when someone scans my pet's tag?
+            <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300"></i>
+          </summary>
+          <p class="mt-4 text-muted border-t pt-4">They'll see your pet's public profile (pet photo, name, medical notes) and secure contact options (phone or email) to reach you directly.</p>
+        </details>
+        <details class="p-6 rounded-card bg-white shadow-soft border border-gray-100 accordion transition-all">
+          <summary class="font-semibold text-lg cursor-pointer flex justify-between items-center pr-2">
+            Is my contact information public?
+            <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300"></i>
+          </summary>
+          <p class="mt-4 text-muted border-t pt-4">Your details are only shown to the finder after the tag is scanned, not publicly indexed. You are in control of what information is displayed.</p>
+        </details>
+        <details class="p-6 rounded-card bg-white shadow-soft border border-gray-100 accordion transition-all">
+          <summary class="font-semibold text-lg cursor-pointer flex justify-between items-center pr-2">
+            How durable is the QR tag?
+            <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-300"></i>
+          </summary>
+          <p class="mt-4 text-muted border-t pt-4">Our tags are made from high-quality, non-toxic materials, designed to be waterproof, weather-resistant, and durable for everyday pet life.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+  
+  ---
+
+  <section id="contact" class="full bg-[var(--bg)] py-20">
+    <div class="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-12 items-start">
+      <div data-aos="fade-right" class="lg:sticky lg:top-24"> 
+        <span class="text-brand1 font-semibold uppercase tracking-widest text-sm">Get in Touch</span>
+        <h2 class="font-cooper text-4xl md:text-5xl font-bold mt-2">We're Here to Help</h2>
+        <p class="mt-4 text-muted text-lg">Send us a message, and we'll usually reply within 1–2 business days. For urgent matters, please call us!</p>
+        
+        <div class="mt-8 p-6 rounded-card bg-white shadow-soft-lg border-t-4 border-brand1 space-y-5">
+            <h3 class="font-cooper text-xl font-bold">Contact Hub</h3>
+            <div class="flex gap-4 items-center">
+                <div class="p-3 rounded-full bg-brand1 text-white flex-shrink-0"><i data-lucide="mail" class="w-5 h-5"></i></div>
+                <div>
+                  <span class="font-semibold block">Email Support</span>
+                  <a href="mailto:admin@furtagph.com" class="hover:text-brand1 text-muted text-sm">admin@furtagph.com</a>
+                </div>
+            </div>
+            <div class="flex gap-4 items-center">
+                <div class="p-3 rounded-full bg-brand1 text-white flex-shrink-0"><i data-lucide="phone" class="w-5 h-5"></i></div>
+                <div>
+                  <span class="font-semibold block">Contact Number</span>
+                  <a href="tel:0000000000" class="hover:text-brand1 text-muted text-sm">0960-671-4277</a>
+                </div>
+            </div>
+            <div class="flex gap-4 items-center">
+                <div class="p-3 rounded-full bg-brand1 text-white flex-shrink-0"><i data-lucide="map-pin" class="w-5 h-5"></i></div>
+                <div>
+                  <span class="font-semibold block">Headquarters</span>
+                  <span class="text-muted text-sm">Pampanga, Philippines</span>
+                </div>
+            </div>
+        </div>
+
+        <div data-aos="fade-up" class="w-full h-80 mt-10 rounded-2xl overflow-hidden shadow-soft-lg">
+          <iframe class="w-full h-full" loading="lazy" allowfullscreen
+            referrerpolicy="no-referrer-when-downgrade"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15410.707798363618!2d120.59275037929555!3d15.158332168393522!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3396f4c89886b517%3A0xc3f94e976c76e730!2sMarisol%2C%20Angeles%2C%20Pampanga%2C%20Philippines!5e0!3m2!1sen!2sus!4v1700000000000!5m2!1sen!2sus">
+          </iframe>
+        </div>
+      </div>
+
+      <div data-aos="fade-left">
+        <h3 class="font-cooper text-2xl font-semibold mb-4">Send Us a Message</h3>
+        <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field"
+              class="space-y-4 p-8 rounded-card bg-white shadow-soft-lg border border-gray-100">
+          <input type="hidden" name="form-name" value="contact" />
+          <input type="hidden" name="subject" value="INQUIRY FROM WEBSITE" />
+          <p class="hidden"><label>Don’t fill this out: <input name="bot-field" /></label></p>
+
+          <div class="grid sm:grid-cols-2 gap-4">
+            <input name="name" required placeholder="Your Full Name" class="input" />
+            <input name="email" type="email" required placeholder="Your Email Address" class="input" />
+          </div>
+          <input name="phone" placeholder="Phone Number (optional)" class="input w-full" />
+          <textarea name="message" required rows="6" placeholder="Tell us how we can help..." class="input w-full"></textarea>
+          <button class="px-6 py-3 rounded-xl bg-brand1 text-white text-lg font-semibold w-full shadow-soft hover:bg-brand2 transition-all">
+            Submit Inquiry
+          </button>
+          <p class="text-xs text-muted text-center">We respect your privacy and will only use your details to respond to this request.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+  
+  ---
+
+  <section id="footer" class="bg-white">
+    <footer class="py-12 border-t border-gray-100">
+      <div class="max-w-7xl mx-auto grid md:grid-cols-4 gap-10 px-4">
+        
+        <div>
+          <a href="#home" class="flex items-center gap-2 flex-shrink max-w-[70%] overflow-hidden">
+            <div class="h-11 w-auto max-w-[45px] p-1.5 bg-brand1 rounded-lg grid place-items-center flex-shrink-0">
+              <img src="assets/2.png" alt="FurTagPH Logo" class="h-full w-full object-contain" />
+            </div>
+            <span class="font-cooper text-xl font-bold tracking-tight truncate">FurtagPH</span>
+          </a>
+          <p class="mt-4 text-sm text-muted">Smart QR pet tags for every pet. Scan. Connect. Reunite.</p>
+          <div class="mt-6 text-xs text-muted">
+            © <span id="year"></span> FurTagPH. All rights reserved.
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-cooper font-bold text-lg mb-4">Quick Links</h4>
+          <ul class="space-y-2 text-sm text-muted">
+            <li><a href="#how" class="hover:text-brand1 transition">How it works</a></li>
+            <li><a href="#gallery" class="hover:text-brand1 transition">Shop Tags</a></li>
+            <li><a href="#faq" class="hover:text-brand1 transition">FAQs</a></li>
+            <li><a href="#about" class="hover:text-brand1 transition">Our Mission</a></li>
+          </ul>
+        </div>
+        
+        <div>
+            <h4 class="font-cooper font-bold text-lg mb-4">Resources</h4>
+            <ul class="space-y-2 text-sm text-muted">
+              <li><a href="#" class="hover:text-brand1 transition">Terms of Service</a></li>
+              <li><a href="#" class="hover:text-brand1 transition">Privacy Policy</a></li>
+              <li><a href="#" class="hover:text-brand1 transition">Return Policy</a></li>
+              <li><a href="#" class="hover:text-brand1 transition">Partner Program</a></li>
+            </ul>
+        </div>
+
+        <div>
+          <h4 class="font-cooper font-bold text-lg mb-4">Stay Connected</h4>
+          
+          <div class="flex flex-wrap gap-3 text-dark">
+            <a href="#" aria-label="Facebook" class="p-2 rounded-full bg-[var(--bg)] hover:bg-brand1 hover:text-white transition-all"><i data-lucide="facebook"></i></a>
+            <a href="#" aria-label="Instagram" class="p-2 rounded-full bg-[var(--bg)] hover:bg-brand1 hover:text-white transition-all"><i data-lucide="instagram"></i></a>
+            <a href="#" aria-label="TikTok" class="p-2 rounded-full bg-[var(--bg)] hover:bg-brand1 hover:text-white transition-all"><i data-lucide="music"></i></a>
+            <a href="#" aria-label="YouTube" class="p-2 rounded-full bg-[var(--bg)] hover:bg-brand1 hover:text-white transition-all"><i data-lucide="youtube"></i></a>
+          </div>
+          
+          <form id="newsletter" class="mt-6 flex gap-2" method="post" target="_blank"
+                action="https://YOUR-DOMAIN.usX.list-manage.com/subscribe/post?u=YOUR_U_ID&id=YOUR_LIST_ID">
+            <input required name="EMAIL" type="email" placeholder="Updates & Promos" class="input w-full" />
+            <button class="px-5 rounded-xl bg-brand1 text-white font-semibold flex-shrink-0 hover:bg-brand2 transition-all">Join</button>
+          </form>
+          <p class="text-xs text-muted mt-2">Sign up for pet safety news and exclusive offers!</p>
+        </div>
+      </div>
+    </footer>
+  </section>
+</main>
+
+<script type="module">
+  // NOTE: This block is unchanged, it handles the Firebase counter
+  const COLLECTION = 'pets';
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import { getFirestore, collection, getCountFromServer } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCARXD0ZyOfgyrvsY9KiVXs4VwloiumiHE",
+    authDomain: "furtagph-cf3d3.firebaseapp.com",
+    projectId: "furtagph-cf3d3",
+    storageBucket: "furtagph-cf3d3.appspot.com",
+    messagingSenderId: "639123411408",
+    appId: "1:639123411408:web:737d4aa4a54b414dcda9d5",
+    measurementId: "G-GHPYPB8XW8"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const countEl = document.getElementById('petsCount');
+  const statusEl = document.getElementById('countStatus');
+
+  const section = document.getElementById('counter');
+  let started = false;
+  const observer = new IntersectionObserver(async (entries) => {
+    entries.forEach(async (entry) => {
+      if (entry.isIntersecting && !started) {
+        started = true;
+        try {
+          statusEl.textContent = 'Fetching live count…';
+          const coll = collection(db, COLLECTION);
+          const snapshot = await getCountFromServer(coll);
+          const total = snapshot.data().count || 0;
+          statusEl.textContent = '';
+          animateCount(0, total, 1200);
+        } catch (e) {
+          statusEl.textContent = 'Could not load live count. Showing demo number.';
+          animateCount(0, 500, 1200);
+          console.error(e);
+        }
       }
+    })
+  }, { threshold: 0.4 });
+  observer.observe(section);
+
+  function animateCount(start, end, duration) {
+    const startTime = performance.now();
+    function frame(now) {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const value = Math.floor(start + (end - start) * easeOutCubic(progress));
+      countEl.textContent = value.toLocaleString();
+      if (progress < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+</script>
+
+<script>
+  // Script for AOS, year, Lucide icons, mobile menu, and scroll sync - UPDATED
+  
+  // AOS init
+  AOS.init({ duration: 800, once: false, offset: 80 });
+
+  // Footer year
+  document.getElementById('year').textContent = new Date().getFullYear();
+  lucide.createIcons();
+
+  // Mobile menu (Kept original logic)
+  const menuBtn = document.getElementById('menuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  const closeMenu = document.getElementById('closeMenu');
+  const drawer = document.getElementById('drawer');
+
+  if (menuBtn && mobileMenu && closeMenu && drawer) {
+    menuBtn.addEventListener('click', () => {
+      mobileMenu.classList.remove('hidden');
+      document.body.style.overflow = 'hidden'; // Lock scroll on mobile
+      drawer.classList.remove('-translate-x-full');
     });
 
-    init();
-    animate();
+    closeMenu.addEventListener('click', () => {
+      drawer.classList.add('-translate-x-full');
+      document.body.style.overflow = 'auto'; // Unlock scroll
+      setTimeout(() => mobileMenu.classList.add('hidden'), 300);
+    });
+    
+    // Also close on link click inside the drawer
+    drawer.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            drawer.classList.add('-translate-x-full');
+            document.body.style.overflow = 'auto'; 
+            setTimeout(() => mobileMenu.classList.add('hidden'), 300);
+        });
+    });
+  }
 
-    // Countdown Timer
-    const launchDate = new Date("2025-09-01 10:00:00").getTime();
-    const countdownElement = document.getElementById("countdown");
+  // --- START OF DOM CONTENT LOADED WRAPPER ---
+  document.addEventListener("DOMContentLoaded", () => {
+    
+    // 1. Header shadow (Fix for previous error)
+    const header = document.getElementById('nav');
+    if (header) {
+      addEventListener('scroll', () => {
+        header.style.boxShadow = window.scrollY > 8 ? '0 8px 30px rgba(0,0,0,.08)' : 'none';
+      }, { passive: true });
+    }
+    
+// 2. Accordion Icon Toggle
+    document.querySelectorAll('.accordion').forEach(details => {
+        const icon = details.querySelector('summary i');
 
-    function updateCountdown() {
-      const now = new Date().getTime();
-      const distance = launchDate - now;
+        // Initial state check for icon rotation on page load
+        if (icon) {
+            icon.style.transform = details.hasAttribute('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+        
+        // Use the native 'toggle' event to handle rotation and close others
+        details.addEventListener('toggle', () => {
+            // Update icon rotation based on the native open/close state
+            if (icon) {
+                icon.style.transform = details.open ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+            
+            // Logic to close all other open details elements
+            if (details.open) {
+                document.querySelectorAll('.accordion').forEach(otherDetails => {
+                    if (otherDetails !== details && otherDetails.open) {
+                        otherDetails.removeAttribute('open');
+                        const otherIcon = otherDetails.querySelector('summary i');
+                        if (otherIcon) {
+                            otherIcon.style.transform = 'rotate(0deg)';
+                        }
+                    }
+                });
+            }
+        });
+    });
 
-      if (distance < 0) {
-        countdownElement.innerHTML = "🎉 We're live! 🎉";
-        clearInterval(countdownInterval);
-        return;
+    // 3. Nav link active state logic
+    const navLinks = document.querySelectorAll(".nav-link");
+
+    const linkMap = Array.from(navLinks).map(link => {
+      const ids = link.dataset.sections.split(",");
+      const sections = ids.map(id => document.querySelector(id)).filter(Boolean);
+      return { link, sections };
+    });
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          // Clear old active states
+          navLinks.forEach(l => l.classList.remove("active"));
+          // Highlight the matching link
+          linkMap.forEach(item => {
+            if (item.sections.includes(entry.target)) {
+              item.link.classList.add("active");
+            }
+          });
+        }
+      });
+    }, { threshold: 0.5, rootMargin: `-${document.getElementById('nav').offsetHeight}px 0px 0px 0px` }); // Account for sticky header
+
+    // Observe all relevant sections
+    linkMap.forEach(item => item.sections.forEach(sec => observer.observe(sec)));
+  });
+  // --- END OF DOM CONTENT LOADED WRAPPER ---
+
+
+  /*// Fullpage scroll (Desktop only) REMOVED FOR MOBILE OPTIMIZATION
+   // 1. Initial Declarations
+  var isScrolling = false;
+  var allSections = Array.from(document.querySelectorAll("section.full"));
+  var currentIndex = 0; 
+  const navHeight = 60; // Hardcoded nav height (approx 60px) for consistent scrolling
+
+  // 2. Helper Functions
+  function scrollToSection(sec) {
+    isScrolling = true;
+    window.scrollTo({
+      // Scrolls to the top of the section, accounting for the fixed navigation bar
+      top: sec.offsetTop - navHeight, 
+      behavior: "smooth"
+    });
+    setTimeout(() => {
+      isScrolling = false;
+    }, 1000); // Prevent scrolling actions for 1 second during animation
+  }
+
+  // Helper to check if a section is taller than the viewport
+  function isTallSection(sec) {
+    // CRITICAL CHECK: If section height exceeds viewport + a small buffer (e.g., 50px), allow native scroll
+    return sec.scrollHeight > window.innerHeight + 50; 
+  }
+
+  // 3. Wheel Event Listener (Universal, but restricted by isTallSection)
+  window.addEventListener("wheel", e => {
+    if (isScrolling) return;
+    const active = allSections[currentIndex];
+    
+    // RE-ENABLED SNAPPING LOGIC
+    // If the current section is too tall, immediately allow native browser scroll
+    if (isTallSection(active)) return;
+
+    e.preventDefault();
+    if (e.deltaY > 0 && currentIndex < allSections.length - 1) {
+      currentIndex++;
+      scrollToSection(allSections[currentIndex]);
+    } else if (e.deltaY < 0 && currentIndex > 0) {
+      currentIndex--;
+      scrollToSection(allSections[currentIndex]);
+    }
+  }, { passive: false });
+
+  // 4. Synchronization Logic
+  
+  // Sync with hash links
+  window.addEventListener("hashchange", () => {
+    const target = document.querySelector(location.hash);
+    if (!target) return;
+    const index = allSections.indexOf(target);
+    if (index >= 0) currentIndex = index;
+    scrollToSection(target); // Ensure smooth scroll on hash change
+  });
+
+  // Sync index on manual scroll
+  window.addEventListener("scroll", () => {
+    let nearest = 0, minDist = Infinity;
+    allSections.forEach((sec, i) => {
+      // Find section closest to the top of the viewport
+      const dist = Math.abs(sec.getBoundingClientRect().top - window.innerHeight * 0.1); 
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = i;
       }
+    });
+    currentIndex = nearest;
+  }, { passive: true });
 
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-      countdownElement.innerHTML = `⏳ Launching in ${days}d ${hours}h ${minutes}m ${seconds}s ⏳`;
+  // 5. Nav link active state logic
+  document.addEventListener("DOMContentLoaded", () => {
+    // Initialize required libraries
+    AOS.init({ duration: 1000, once: true });
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
     }
 
-    const countdownInterval = setInterval(updateCountdown, 1000);
-    updateCountdown();
-  </script>
+    const navLinks = document.querySelectorAll(".nav-link");
+    const linkMap = Array.from(navLinks).map(link => {
+      const ids = link.dataset.sections.split(",");
+      const sections = ids.map(id => document.querySelector(id)).filter(Boolean);
+      return { link, sections };
+    });
+    
+    // Intersection Observer to handle active link states
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          navLinks.forEach(l => l.classList.remove("active"));
+          linkMap.forEach(item => {
+            if (item.sections.includes(entry.target)) {
+              item.link.classList.add("active");
+            }
+          });
+        }
+      });
+    }, { threshold: 0.5, rootMargin: `-${navHeight}px 0px 0px 0px` }); 
+
+    allSections.forEach(sec => observer.observe(sec));
+  });*/
+
+ 
+</script>
 </body>
 </html>
